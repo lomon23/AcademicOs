@@ -10,11 +10,11 @@ class MainWindow : public QMainWindow{
 
     public:
         MainWindow(QWidget *parent = nullptr);
-        ~MainWindow();
+        ~MainWindow(); 
 
     private:
         // Замість Ui::MainWindow *ui; ми створюємо вказівники на наші віджети тут
         QWidget *centralWidget; // Головний контейнер
         QGridLayout *mainLayout; // Наша Bento-сітка
 };
-#endif // MAINWINDOW_H
+#endif 

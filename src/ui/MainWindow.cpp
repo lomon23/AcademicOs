@@ -1,10 +1,11 @@
 #include "MainWindow.h"
+#include "components/Sidebar.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     // 1. Налаштування самого вікна
-    this->resize(1200, 800);
+    this->resize(1920, 1080);
     this->setWindowTitle("Academic OS");
     
     // Щоб вікно було темним (тимчасово, поки не підключили стилі)
@@ -23,12 +24,8 @@ MainWindow::MainWindow(QWidget *parent)
     // Це просто кнопки для прикладу, потім замінимо на красиві QFrame
     
     // Картка 1: Сайдбар (ліва колонка, розтягується на всю висоту)
-    QPushButton *sidebar = new QPushButton("Sidebar");
-    sidebar->setStyleSheet("background-color: #1E1E1E; border: none; border-radius: 16px; color: white;");
-    sidebar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    // Додаємо в сітку: (row=0, col=0, rowSpan=2, colSpan=1)
+    Sidebar *sidebar = new Sidebar(centralWidget);
     mainLayout->addWidget(sidebar, 0, 0, 2, 1);
-
     // Картка 2: Головний графік (верх, широкий)
     QPushButton *mainChart = new QPushButton("Main Chart");
     mainChart->setStyleSheet("background-color: #1E1E1E; border: none; border-radius: 16px; color: white;");
