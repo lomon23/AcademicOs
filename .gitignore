@@ -1,0 +1,38 @@
+# --- Build & Compiled files ---
+build/
+bin/
+lib/
+*.o
+*.obj
+*.exe
+*.so
+*.a
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# --- Qt Specific ---
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+.qmake.stash
+*.pro.user
+*.pro.user.*
+CMakeLists.txt.user
+
+# --- VS Code & IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
+
+# --- Application Data ---
+# Не закидай свою локальну базу даних на GitHub!
+*.db
+*.sqlite
+*.log
