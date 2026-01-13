@@ -22,7 +22,7 @@ add_executable(AcademicOS
     src/main.cpp
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
-    src/ui/MainWindow.ui
+
     # Тут потім допишеш інші файли, наприклад src/core/DatabaseManager.cpp
 )
 
