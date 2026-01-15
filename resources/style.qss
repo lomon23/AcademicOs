@@ -1,0 +1,36 @@
+/* 1. Загальний фон вікна */
+QMainWindow {
+    background-color: #121212;
+}
+
+/* 2. Стиль для Сайдбару (звертаємось по класу) */
+Sidebar {
+    background-color: #1E1E1E;
+    border-radius: 16px;
+}
+
+/* 3. Стиль для карток на Дашборді */
+/* Ми будемо давати їм імена, щоб не фарбувати ВСІ віджети підряд */
+#dashboardCard {
+    background-color: #1E1E1E;
+    border-radius: 16px;
+    color: white;
+    font-size: 24px;
+}
+
+/* 4. Кнопки в Сайдбарі */
+Sidebar QPushButton {
+    color: #A0A0A0;
+    background-color: transparent;
+    border: none;
+    text-align: left;
+    padding-left: 20px;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+Sidebar QPushButton:hover {
+    color: #FFFFFF;
+    background-color: #2D2D2D;
+    border-radius: 10px;
+}

@@ -6,13 +6,13 @@
 #include <QPushButton>
 
 class Sidebar : public QWidget {
-Q_OBJECT
+    Q_OBJECT
 public: 
     explicit Sidebar(QWidget *parent = nullptr);
 
 
 signals: 
-    void PageChanged(int index);
+    void pageChanged(int index);
 
 private:
     QVBoxLayout *layout;

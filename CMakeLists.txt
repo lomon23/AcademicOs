@@ -12,22 +12,42 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-add_executable(AcademicOS
+set(MAIN_SOURCES
     src/main.cpp
+)
+
+set(UI_SOURCES
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
-
-    libs/qcustomplot/qcustomplot.cpp
-    libs/qcustomplot/qcustomplot.h
-
+)
+set(PAGE_SOURCES
+    src/ui/page/Dashboard.cpp
+    src/ui/page/Dashboard.h
+)
+set(COMPONENT_SOURCES
     src/ui/components/Sidebar.cpp
     src/ui/components/Sidebar.h
 )
+set(STYLE_RESOURCES
+    resources/resources.qrc
+    resources/style.qss
+)
+set(LIB_SOURCES
+    libs/qcustomplot/qcustomplot.cpp
+    libs/qcustomplot/qcustomplot.h
+)
 
-# 3. Додаємо шлях до папки, щоб можна було писати #include "qcustomplot.h"
+add_executable(AcademicOS
+    ${MAIN_SOURCES}
+    ${UI_SOURCES}
+    ${COMPONENT_SOURCES}
+    ${LIB_SOURCES}
+    ${STYLE_RESOURCES}
+    ${PAGE_SOURCES}
+)
+
 target_include_directories(AcademicOS PRIVATE libs/qcustomplot)
 
-# 4. ВАЖЛИВО: Лінкуємо модуль PrintSupport
 target_link_libraries(AcademicOS PRIVATE 
     Qt6::Widgets 
     Qt6::Sql 
