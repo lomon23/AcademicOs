@@ -1,10 +1,13 @@
-#include "ui/MainWindow.h" // Зверни увагу на шлях до хедера
+#include "ui/MainWindow.h" 
+#include "core/StorageManager.h"
 #include <QApplication>
 #include <QFile>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    
+    StorageManager::instance().init();
     
     QFile file(":/style.qss");
     if (file.open(QFile::ReadOnly | QFile::Text)) {

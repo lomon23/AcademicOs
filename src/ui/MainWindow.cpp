@@ -1,8 +1,9 @@
 #include "MainWindow.h"
 #include "components/Sidebar.h"
+#include "page/Dashboard.h"
 #include <QStackedWidget>
 #include <QLabel>
-
+#include "../core/StorageManager.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -26,7 +27,7 @@ MainWindow::MainWindow(QWidget *parent)
     
     QStackedWidget *pagesStack = new QStackedWidget(centralWidget);
 
-    QWidget *dashboardPage = new QWidget();
+    Dashboard *dashboardPage = new Dashboard(centralWidget);
 
     
     // СТОРІНКА 1: Calendar
@@ -64,8 +65,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     // --- ВИПРАВЛЕННЯ 2: pageChanged з маленької літери + стоїть в кінці ---
     connect(sidebar, &Sidebar::pageChanged, pagesStack, &QStackedWidget::setCurrentIndex);
+    
+    
 }
 
+
 MainWindow::~MainWindow(){
-    
+
 }

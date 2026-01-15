@@ -15,7 +15,10 @@ set(CMAKE_AUTORCC ON)
 set(MAIN_SOURCES
     src/main.cpp
 )
-
+set(CORE_SOURCES
+    src/core/StorageManager.cpp
+    src/core/StorageManager.h
+)
 set(UI_SOURCES
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
@@ -44,6 +47,7 @@ add_executable(AcademicOS
     ${LIB_SOURCES}
     ${STYLE_RESOURCES}
     ${PAGE_SOURCES}
+    ${CORE_SOURCES}
 )
 
 target_include_directories(AcademicOS PRIVATE libs/qcustomplot)
