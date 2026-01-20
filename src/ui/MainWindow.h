@@ -2,19 +2,37 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QGridLayout> // Підключаємо сітку
-#include <QPushButton> // Для тесту кнопок
+#include <QGridLayout>
+#include <QStackedWidget>
+#include <QList>
 
-class MainWindow : public QMainWindow{
-        Q_OBJECT
+// Підключаємо твої класи
+#include "components/Sidebar.h"
+#include "page/Dashboard.h" // Перевір шлях (page чи pages?)
+#include "../modules/analytics/AnalyticsModule.h" // <--- Для AnalyticsModule
 
-    public:
-        MainWindow(QWidget *parent = nullptr);
-        ~MainWindow(); 
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
 
-    private:
-        // Замість Ui::MainWindow *ui; ми створюємо вказівники на наші віджети тут
-        QWidget *centralWidget; // Головний контейнер
-        QGridLayout *mainLayout; // Наша Bento-сітка
+public:
+    MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
+
+private slots:
+    void onAddWidgetClicked(); // Слот для додавання
+
+private:
+    QWidget *centralWidget;
+    QGridLayout *mainLayout;
+    
+    // --- ВАЖЛИВО: Оголошуємо змінні тут ---
+    Sidebar *sidebar;               // <--- Оголосили
+    QStackedWidget *pagesStack;     // <--- Оголосили
+    Dashboard *dashboardPage;       // <--- Оголосили
+    
+    // Список модулів
+    QList<AnalyticsModule*> activeModules;
 };
-#endif 
+
+#endif // MAINWINDOW_H

@@ -9,7 +9,7 @@ class Sidebar : public QWidget {
     Q_OBJECT
 public: 
     explicit Sidebar(QWidget *parent = nullptr);
-
+    void addMenuButton(const QString &text, int index);
 
 signals: 
     void pageChanged(int index);

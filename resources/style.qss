@@ -34,3 +34,31 @@ Sidebar QPushButton:hover {
     background-color: #2D2D2D;
     border-radius: 10px;
 }
+AnalyticsSmallWidget {
+    background-color: #1E1E1E; /* Темно-сірий фон картки */
+    border-radius: 20px;       /* Сильне заокруглення (Apple style) */
+    border: 1px solid #333333; /* Тонка рамка */
+}
+
+/* Ефект при наведенні мишкою на картку */
+AnalyticsSmallWidget:hover {
+    border: 1px solid #00E676; /* Підсвітка зеленим */
+    background-color: #252525; /* Трохи світліше */
+}
+
+/* 2. Стиль для кнопки "Add Widget" */
+/* Даємо їй ім'я в коді (setObjectName), щоб звертатися через # */
+QPushButton#btnAddWidget {
+    background-color: transparent;
+    border: 2px dashed #444444; /* Пунктирна рамка */
+    border-radius: 20px;
+    color: #666666;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+QPushButton#btnAddWidget:hover {
+    border-color: #00E676;
+    color: #00E676;
+    background-color: rgba(0, 230, 118, 0.1); /* Легкий зелений фон */
+}

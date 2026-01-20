@@ -9,6 +9,9 @@ class Dashboard :public QWidget {
 
 public:
     explicit Dashboard(QWidget *parent = nullptr);
+    void addModuleWidget(QWidget* widget);
+signals:
+    void widgetAdded();
 
 private:
     QGridLayout *mainLayout;  

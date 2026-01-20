@@ -19,6 +19,14 @@ set(CORE_SOURCES
     src/core/StorageManager.cpp
     src/core/StorageManager.h
 )
+set(MODULES_SOURCES
+    src/modules/analytics/AnalyticsSmallWidget.h
+    src/modules/analytics/AnalyticsModule.h
+    src/modules/analytics/AnalyticsFullPage.h
+    src/modules/analytics/AnalyticsSmallWidget.cpp
+    src/modules/analytics/AnalyticsModule.cpp
+    src/modules/analytics/AnalyticsFullPage.cpp
+)
 set(UI_SOURCES
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
@@ -48,6 +56,7 @@ add_executable(AcademicOS
     ${STYLE_RESOURCES}
     ${PAGE_SOURCES}
     ${CORE_SOURCES}
+    ${MODULES_SOURCES}
 )
 
 target_include_directories(AcademicOS PRIVATE libs/qcustomplot)

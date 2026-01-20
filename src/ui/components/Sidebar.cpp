@@ -38,3 +38,14 @@ QPushButton* Sidebar::createButton(const QString &text, int index)
 
     return btn;
 };
+void Sidebar::addMenuButton(const QString &text, int index)
+{
+    // Використовуємо твій існуючий приватний метод createButton
+    QPushButton *btn = createButton(text, index);
+    
+    // Додаємо в лейаут (перед розтяжкою addStretch, якщо вона є в кінці)
+    // Якщо у тебе layout->addStretch() в кінці конструктора, то треба вставляти 
+    // кнопку за індексом: layout->insertWidget(layout->count() - 1, btn);
+    // Або просто:
+    layout->addWidget(btn); 
+}
