@@ -3,6 +3,10 @@
 
 #include <QWidget>
 #include <QGridLayout>
+#include <QVector>
+#include <QLineEdit>
+#include <QCompleter> // Для автопідказки
+#include "../../modules/analytics/AnalyticsSmallWidget.h"
 
 class Dashboard :public QWidget {
     Q_OBJECT
@@ -12,9 +16,25 @@ public:
     void addModuleWidget(QWidget* widget);
 signals:
     void widgetAdded();
-
+    void requestWidget(const QString &widgetType);
+private slots:
+    void onAddClicked();
+    void onSearchReturnPressed();
 private:
-    QGridLayout *mainLayout;  
+    // Layouts
+    QVBoxLayout *mainLayout;    // Головний вертикальний
+    QWidget *searchContainer;   // Контейнер для поля пошуку (щоб ховати/показувати)
+    QGridLayout *gridLayout;    // Сітка для віджетів
+
+    // UI Elements
+    QLineEdit *searchBar;
+    QCompleter *completer;
+
+    // State
+    QVector<QWidget*> widgets;
+    
+    void setupUi();
+    void setupSearch(); // Налаштування автодоповнення
 };
 
 

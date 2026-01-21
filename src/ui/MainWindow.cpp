@@ -1,93 +1,176 @@
 #include "MainWindow.h"
 #include <QLabel>
+#include <QDebug>
 #include "../core/StorageManager.h"
-// Підключаємо хедери віджетів модуля
+
+// Modules
 #include "../modules/analytics/AnalyticsSmallWidget.h"
 #include "../modules/analytics/AnalyticsFullPage.h"
+#include "../modules/analytics/AnalyticsModule.h"
+
+#include "../modules/finance/FinanceModule.h"
+#include "../modules/finance/FinanceFullPage.h"
+#include "../modules/finance/FinanceSmallWidget.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    // 1. Налаштування вікна
-    this->resize(1920, 1080);
+    // Налаштування вікна
+    this->resize(1280, 720);
     this->setWindowTitle("Academic OS");
 
     centralWidget = new QWidget(this);
     this->setCentralWidget(centralWidget);
 
     mainLayout = new QGridLayout(centralWidget);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
         
-    // --- ВИПРАВЛЕННЯ: НЕ пиши "Sidebar *sidebar", пиши просто "sidebar" ---
     sidebar = new Sidebar(centralWidget); 
     mainLayout->addWidget(sidebar, 0, 0, 1, 1); 
     
-    // Те саме тут
     pagesStack = new QStackedWidget(centralWidget);
-
-    // І тут
     dashboardPage = new Dashboard(centralWidget);
 
-    // СТОРІНКА 1: Calendar
-    QLabel *calendarPage = new QLabel("Тут буде Календар");
-    calendarPage->setAlignment(Qt::AlignCenter);
-    // ... інші сторінки ...
-    QLabel *todoPage = new QLabel("To-Do");
-    QLabel *uniPage = new QLabel("Універ");
-    QLabel *settingsPage = new QLabel("Налаштування");
+    pagesStack->addWidget(dashboardPage); 
 
-    // --- ДОДАЄМО СТОРІНКИ В СТЕК ---
-    pagesStack->addWidget(dashboardPage); // index 0
-    pagesStack->addWidget(calendarPage);  // index 1
-    pagesStack->addWidget(todoPage);      // index 2
-    pagesStack->addWidget(uniPage);       // index 3
-    pagesStack->addWidget(settingsPage);  // index 4
-
-    // --- РОЗМІЩУЄМО СТЕК ---
     mainLayout->addWidget(pagesStack, 0, 1, 1, 1);
-
     mainLayout->setColumnStretch(0, 0); 
     mainLayout->setColumnStretch(1, 1); 
 
-    // Connect
-    connect(dashboardPage, &Dashboard::widgetAdded, this, &MainWindow::onAddWidgetClicked);
     connect(sidebar, &Sidebar::pageChanged, pagesStack, &QStackedWidget::setCurrentIndex);
+    connect(dashboardPage, &Dashboard::requestWidget, this, &MainWindow::handleWidgetCreation);
+    
+    // --- ЗАВАНТАЖУЄМО ЗБЕРЕЖЕНИЙ СТАН ---
+    loadDashboard();
 }
 
-void MainWindow::onAddWidgetClicked()
-{
-    // 1. Створюємо модуль (без назви, просто пустий)
-    AnalyticsModule *newModule = new AnalyticsModule(this);
-    activeModules.append(newModule);
+MainWindow::~MainWindow() {}
 
-    // 2. Створюємо віджети
-    AnalyticsSmallWidget *smallWidget = newModule->createSmallWidget();
+void MainWindow::onAddWidgetClicked() {} 
+
+void MainWindow::handleWidgetCreation(const QString &widgetName)
+{
+    qDebug() << "Factory received request:" << widgetName;
+
+    if (widgetName == "Analytics Chart") {
+        createAnalytics(); // Створиться з дефолтною назвою
+    } 
+    else if (widgetName == "Finance Wallet") {
+        createFinance();
+    }
+    
+    // Після додавання нового віджета — зберігаємось!
+    saveDashboard();
+}
+
+// --- СТВОРЕННЯ АНАЛІТИКИ ---
+void MainWindow::createAnalytics(const QString &title)
+{
+    AnalyticsModule *module = new AnalyticsModule(this);
+    module->setTitle(title); // Встановлюємо назву (з JSON або дефолтну)
+    activeModules.append(module);
+
+    AnalyticsSmallWidget *smallWidget = module->createSmallWidget();
     dashboardPage->addModuleWidget(smallWidget);
     
-    AnalyticsFullPage *fullPage = newModule->createFullPage();
-    int newPageIndex = pagesStack->addWidget(fullPage);
+    AnalyticsFullPage *fullPage = module->createFullPage();
+    int pageIdx = pagesStack->addWidget(fullPage);
 
-    // 3. Додаємо в сайдбар (поки дефолтна назва)
-    // Важливо: зберігаємо вказівник на кнопку, щоб потім змінювати її текст!
-    // (Для цього треба буде трохи допрацювати Sidebar, але поки хай буде так)
-    sidebar->addMenuButton("New Chart", newPageIndex);
+    // Додаємо кнопку в меню (зберігаємо вказівник, щоб потім міняти текст, 
+    // але поки Sidebar цього не вміє, тому просто додаємо)
+    sidebar->addMenuButton(title, pageIdx);
 
-    // --- ЛОГІКА ПЕРЕХОДУ ---
-    connect(smallWidget, &AnalyticsSmallWidget::clicked, [this, newPageIndex]() {
-        pagesStack->setCurrentIndex(newPageIndex);
+    connect(smallWidget, &AnalyticsSmallWidget::clicked, [this, pageIdx]() {
+        pagesStack->setCurrentIndex(pageIdx);
     });
 
-    // --- ЛОГІКА СИНХРОНІЗАЦІЇ (Full Page -> Small Widget) ---
-    // Коли на великій сторінці змінили назву...
-    connect(fullPage, &AnalyticsFullPage::configChanged, [smallWidget, newModule](const QString &newTitle){
-        // 1. Оновлюємо малий віджет
+    // Коли міняємо назву графіка -> Зберігаємо це в JSON
+    connect(fullPage, &AnalyticsFullPage::configChanged, [this, smallWidget, module](const QString &newTitle){
         smallWidget->setTitle(newTitle);
-        // 2. Оновлюємо сам модуль (щоб зберегти в JSON)
-        newModule->setTitle(newTitle);
-        // 3. Тут ще треба оновити текст кнопки в Сайдбарі (це наступний квест)
+        module->setTitle(newTitle);
+        saveDashboard(); // <--- АВТОЗБЕРЕЖЕННЯ ПРИ ПЕРЕЙМЕНУВАННІ
     });
 }
 
-MainWindow::~MainWindow(){
+// --- СТВОРЕННЯ ФІНАНСІВ ---
+void MainWindow::createFinance()
+{
+    for (QObject *obj : activeModules) {
+        if (qobject_cast<FinanceModule*>(obj)) return; 
+    }
 
+    FinanceModule *module = new FinanceModule(this);
+    activeModules.append(module);
+    
+    // 1. СТВОРЮЄМО МАЛИЙ ВІДЖЕТ
+    // (Попередньо додай #include "../modules/finance/FinanceSmallWidget.h" зверху файлу!)
+    // Якщо метод createSmallWidget не визначений в Base класі, то треба привести тип або додати його в Module.
+    // Але ми тільки що додали його в FinanceModule.
+    
+    // УВАГА: Якщо createSmallWidget повертає конкретний тип FinanceSmallWidget*,
+    // нам треба кастити його до QWidget* для Dashboard::addModuleWidget.
+    
+    auto *smallWidget = module->createSmallWidget(); // auto або FinanceSmallWidget*
+    dashboardPage->addModuleWidget(smallWidget);
+    
+    // 2. СТВОРЮЄМО ПОВНУ СТОРІНКУ
+    FinanceFullPage *fullPage = module->createFullPage();
+    int pageIdx = pagesStack->addWidget(fullPage);
+    
+    sidebar->addMenuButton("Wallet", pageIdx);
+    
+    // 3. ЛОГІКА ПЕРЕХОДУ
+    connect(smallWidget, &FinanceSmallWidget::clicked, [this, pageIdx]() {
+        pagesStack->setCurrentIndex(pageIdx);
+    });
+
+    pagesStack->setCurrentIndex(pageIdx);
+}
+
+// --- SAVE / LOAD SYSTEM ---
+
+void MainWindow::saveDashboard() {
+    QJsonArray modulesArray;
+
+    for (QObject *obj : activeModules) {
+        QJsonObject json;
+        
+        // Перевіряємо, який це модуль
+        if (auto *fin = qobject_cast<FinanceModule*>(obj)) {
+            json["type"] = "finance";
+            modulesArray.append(json);
+        } 
+        else if (auto *anal = qobject_cast<AnalyticsModule*>(obj)) {
+            json["type"] = "analytics";
+            json["title"] = anal->getTitle(); // Зберігаємо назву графіка
+            modulesArray.append(json);
+        }
+    }
+
+    // Записуємо в глобальний конфіг під ключем "dashboard_layout"
+    StorageManager::instance().saveConfig("dashboard_layout", modulesArray);
+    qDebug() << "Dashboard saved!";
+}
+
+void MainWindow::loadDashboard() {
+    QVariant data = StorageManager::instance().loadConfig("dashboard_layout");
+    
+    if (data.isValid()) {
+        QJsonArray arr = data.toJsonArray();
+        
+        for (const auto &val : arr) {
+            QJsonObject obj = val.toObject();
+            QString type = obj["type"].toString();
+
+            if (type == "finance") {
+                createFinance();
+            } 
+            else if (type == "analytics") {
+                QString title = obj["title"].toString();
+                if (title.isEmpty()) title = "New Chart";
+                createAnalytics(title);
+            }
+        }
+    }
 }

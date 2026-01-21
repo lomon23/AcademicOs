@@ -1,50 +1,134 @@
 #include "Dashboard.h"
+#include <QLabel>
 #include <QPushButton>
+#include <QFrame>
+#include <QDebug>
+#include <QStringListModel>
 
-Dashboard::Dashboard(QWidget *parent) : QWidget(parent) {
-    this->setAttribute(Qt::WA_StyledBackground, true);
-    
-    mainLayout = new QGridLayout(this);
-    
-    // --- ПОЛІРОВКА СІТКИ ---
-    mainLayout->setContentsMargins(40, 40, 40, 40); // Відступи від країв вікна
-    mainLayout->setSpacing(25); // Відстань між картками (повітря)
-    // Вирівнювання: все збиваємо в лівий верхній кут, а не розтягуємо
-    mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft); 
-
-    QPushButton *btnAddWidget = new QPushButton("+ Add Widget", this);
-    
-    // 1. Даємо ім'я для QSS
-    btnAddWidget->setObjectName("btnAddWidget"); 
-    // 2. Робимо кнопку такою ж за розміром, як і віджети
-    btnAddWidget->setFixedSize(300, 200); 
-    
-    // Прибираємо setStyleSheet звідси, бо тепер це в QSS файлі!
-    // btnAddWidget->setStyleSheet(...); <--- ВИДАЛИТИ
-
-    mainLayout->addWidget(btnAddWidget, 0, 0); // Починаємо з 0,0
-
-    connect(btnAddWidget, &QPushButton::clicked, this, &Dashboard::widgetAdded);
+Dashboard::Dashboard(QWidget *parent) : QWidget(parent)
+{
+    setupUi();
+    setupSearch();
 }
 
-void Dashboard::addModuleWidget(QWidget* widget) {
-    // Логіка додавання:
-    // Ми хочемо вставляти віджет ПЕРЕД кнопкою "+".
+void Dashboard::setupUi() {
+    // 1. Головний лейоут (Вертикальний)
+    mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(20, 20, 20, 20);
+    mainLayout->setSpacing(15);
+
+    // --- HEADER (Кнопка Add) ---
+    QWidget *header = new QWidget(this);
+    header->setFixedHeight(50);
+    QHBoxLayout *headerLayout = new QHBoxLayout(header);
+    headerLayout->setContentsMargins(0, 0, 0, 0);
+
+    QLabel *title = new QLabel("Dashboard", this);
+    title->setStyleSheet("font-size: 24px; font-weight: bold; color: white;");
+    headerLayout->addWidget(title);
+
+    headerLayout->addStretch(); // Пружина, щоб кнопка була справа
+
+    QPushButton *addBtn = new QPushButton("+ Add Widget", this);
+    addBtn->setCursor(Qt::PointingHandCursor);
+    addBtn->setFixedSize(120, 35);
+    addBtn->setStyleSheet("QPushButton { background-color: #00E676; color: #121212; border-radius: 6px; font-weight: bold; }"
+                          "QPushButton:hover { background-color: #69F0AE; }");
+    connect(addBtn, &QPushButton::clicked, this, &Dashboard::onAddClicked);
+    headerLayout->addWidget(addBtn);
+
+    mainLayout->addWidget(header);
+
+
+    // --- SEARCH BAR (Прихований за замовчуванням) ---
+    searchContainer = new QWidget(this);
+    searchContainer->setVisible(false); // Ховаємо на старті
+    QVBoxLayout *searchLayout = new QVBoxLayout(searchContainer);
+    searchLayout->setContentsMargins(0, 0, 0, 0);
+
+    searchBar = new QLineEdit(this);
+    searchBar->setPlaceholderText("Type widget name (e.g. 'Finance', 'Analytics') and press Enter...");
+    searchBar->setStyleSheet(
+        "QLineEdit { "
+        "  background-color: #252526; " // VS Code dark input
+        "  color: white; "
+        "  border: 1px solid #3C3C3C; "
+        "  border-radius: 4px; "
+        "  padding: 8px; "
+        "  font-size: 14px; "
+        "}"
+        "QLineEdit:focus { border: 1px solid #007FD4; }" // VS Code blue border
+    );
+    connect(searchBar, &QLineEdit::returnPressed, this, &Dashboard::onSearchReturnPressed);
     
-    int count = mainLayout->count(); // Скільки зараз елементів (включно з кнопкою)
-    int widgetIndex = count - 1;     // Індекс для нового віджета
+    searchLayout->addWidget(searchBar);
+    mainLayout->addWidget(searchContainer);
+
+
+    // --- GRID (Для віджетів) ---
+    // Ми кладемо Grid у ScrollArea або просто розтягуємо
+    QWidget *gridContainer = new QWidget(this);
+    gridContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
-    // Розрахунок для сітки (наприклад, по 4 в ряд)
-    int maxColumns = 4;
-    int row = widgetIndex / maxColumns;
-    int col = widgetIndex % maxColumns;
+    gridLayout = new QGridLayout(gridContainer);
+    gridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    gridLayout->setSpacing(20);
     
-    // 1. Додаємо віджет на місце кнопки
-    mainLayout->addWidget(widget, row, col);
+    mainLayout->addWidget(gridContainer);
+}
+
+void Dashboard::setupSearch() {
+    // Список доступних віджетів
+    QStringList wordList;
+    wordList << "Analytics Chart" << "Finance Wallet";
+
+    // Налаштування автопідказки
+    completer = new QCompleter(wordList, this);
+    completer->setCaseSensitivity(Qt::CaseInsensitive);
+    completer->setFilterMode(Qt::MatchContains); // Шукає "Wallet" навіть якщо написав не з початку
     
-    // 2. Пересуваємо кнопку "+" на наступну позицію
-    int nextIndex = count;
-    int nextRow = nextIndex / maxColumns;
-    int nextCol = nextIndex % maxColumns;
-    mainLayout->addWidget(this->findChild<QPushButton*>("btnAddWidget"), nextRow, nextCol);
+    // Стилізація випадаючого списку (Popup)
+    QAbstractItemView *popup = completer->popup();
+    popup->setStyleSheet(
+        "QAbstractItemView { background: #252526; color: white; selection-background-color: #007FD4; }"
+    );
+
+    searchBar->setCompleter(completer);
+}
+
+void Dashboard::onAddClicked() {
+    // Перемикаємо видимість пошуку
+    bool isVisible = searchContainer->isVisible();
+    searchContainer->setVisible(!isVisible);
+
+    if (!isVisible) {
+        searchBar->setFocus(); // Зразу ставимо фокус, щоб писати
+        searchBar->clear();
+    }
+}
+
+void Dashboard::onSearchReturnPressed() {
+    QString text = searchBar->text();
+    if (text.isEmpty()) return;
+
+    qDebug() << "Requesting widget creation:" << text;
+
+    // Відправляємо сигнал у MainWindow
+    emit requestWidget(text);
+
+    // Ховаємо пошук
+    searchBar->clear();
+    searchContainer->setVisible(false);
+}
+
+void Dashboard::addModuleWidget(QWidget *widget) {
+    if (!widget) return;
+    
+    // Шукаємо вільне місце в сітці (тупий алгоритм, але робочий)
+    int row = widgets.size() / 2; // 2 стовпці
+    int col = widgets.size() % 2;
+    
+    // Додаємо в сітку
+    gridLayout->addWidget(widget, row, col);
+    widgets.append(widget);
 }

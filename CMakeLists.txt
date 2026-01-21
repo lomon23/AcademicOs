@@ -26,6 +26,13 @@ set(MODULES_SOURCES
     src/modules/analytics/AnalyticsSmallWidget.cpp
     src/modules/analytics/AnalyticsModule.cpp
     src/modules/analytics/AnalyticsFullPage.cpp
+
+    src/modules/finance/FinanceModule.cpp
+    src/modules/finance/FinanceModule.h
+    src/modules/finance/FinanceFullPage.cpp
+    src/modules/finance/FinanceFullPage.h
+    src/modules/finance/FinanceSmallWidget.h
+src/modules/finance/FinanceSmallWidget.cpp
 )
 set(UI_SOURCES
     src/ui/MainWindow.cpp
