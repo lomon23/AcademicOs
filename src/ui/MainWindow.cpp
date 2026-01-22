@@ -1,6 +1,8 @@
 #include "MainWindow.h"
 #include <QLabel>
 #include <QDebug>
+#include <QUuid>
+
 #include "../core/StorageManager.h"
 
 // Modules
@@ -15,37 +17,55 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    // Налаштування вікна
+    // 1. Налаштування вікна
     this->resize(1280, 720);
     this->setWindowTitle("Academic OS");
 
     centralWidget = new QWidget(this);
     this->setCentralWidget(centralWidget);
 
+    // 2. Створення лейауту
     mainLayout = new QGridLayout(centralWidget);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
-        
-    sidebar = new Sidebar(centralWidget); 
-    mainLayout->addWidget(sidebar, 0, 0, 1, 1); 
-    
+
+    // 3. Створення Сайдбару
+    sidebar = new Sidebar(this);
+    mainLayout->addWidget(sidebar, 0, 0, 1, 1);
+
+    // 4. Створення Стеку сторінок (ВАЖЛИВО: Створити ПЕРЕД registerPage)
     pagesStack = new QStackedWidget(centralWidget);
-    dashboardPage = new Dashboard(centralWidget);
-
-    pagesStack->addWidget(dashboardPage); 
-
     mainLayout->addWidget(pagesStack, 0, 1, 1, 1);
-    mainLayout->setColumnStretch(0, 0); 
-    mainLayout->setColumnStretch(1, 1); 
 
-    connect(sidebar, &Sidebar::pageChanged, pagesStack, &QStackedWidget::setCurrentIndex);
+    // Налаштування пропорцій (сайдбар вузький, контент широкий)
+    mainLayout->setColumnStretch(0, 0);
+    mainLayout->setColumnStretch(1, 1);
+
+    // 5. Створення Дашборду і реєстрація
+    dashboardPage = new Dashboard(this);
+    registerPage("dashboard", dashboardPage); // Тепер pagesStack існує, все ок!
+
+    // 6. Підключення навігації
+    connect(sidebar, &Sidebar::navigationRequested, [this](const QString &id){
+        if (pageMap.contains(id)) {
+            pagesStack->setCurrentIndex(pageMap[id]);
+        } else {
+            qDebug() << "Page not found for ID:" << id;
+        }
+    });
+
     connect(dashboardPage, &Dashboard::requestWidget, this, &MainWindow::handleWidgetCreation);
-    
-    // --- ЗАВАНТАЖУЄМО ЗБЕРЕЖЕНИЙ СТАН ---
+
+    // 7. Завантаження стану
     loadDashboard();
+    
+    // Старт на дашборді
+    if (pageMap.contains("dashboard")) {
+        pagesStack->setCurrentIndex(pageMap["dashboard"]);
+    }
 }
 
-MainWindow::~MainWindow() {}
+
 
 void MainWindow::onAddWidgetClicked() {} 
 
@@ -68,34 +88,46 @@ void MainWindow::handleWidgetCreation(const QString &widgetName)
 void MainWindow::createAnalytics(const QString &title)
 {
     AnalyticsModule *module = new AnalyticsModule(this);
-    module->setTitle(title); // Встановлюємо назву (з JSON або дефолтну)
+    module->setTitle(title);
     activeModules.append(module);
 
     AnalyticsSmallWidget *smallWidget = module->createSmallWidget();
     dashboardPage->addModuleWidget(smallWidget);
     
     AnalyticsFullPage *fullPage = module->createFullPage();
-    int pageIdx = pagesStack->addWidget(fullPage);
+    
+    // 1. ГЕНЕРУЄМО УНІКАЛЬНИЙ ID
+    // Кожен графік повинен мати свій ключ (наприклад: "chart_1234-5678...")
+    QString pageId = "chart_" + QUuid::createUuid().toString();
+    registerPage(pageId, fullPage);
+    sidebar->addChartButton(pageId, title); // Додаємо кнопку в сайдбар
 
-    // Додаємо кнопку в меню (зберігаємо вказівник, щоб потім міняти текст, 
-    // але поки Sidebar цього не вміє, тому просто додаємо)
-    sidebar->addMenuButton(title, pageIdx);
-
-    connect(smallWidget, &AnalyticsSmallWidget::clicked, [this, pageIdx]() {
-        pagesStack->setCurrentIndex(pageIdx);
+    // 3. ЛОГІКА ПЕРЕХОДУ
+    connect(smallWidget, &AnalyticsSmallWidget::clicked, [this, pageId]() {
+        if (pageMap.contains(pageId)) {
+            pagesStack->setCurrentIndex(pageMap[pageId]);
+        }
     });
 
-    // Коли міняємо назву графіка -> Зберігаємо це в JSON
-    connect(fullPage, &AnalyticsFullPage::configChanged, [this, smallWidget, module](const QString &newTitle){
+    // 4. ЛОГІКА ПЕРЕЙМЕНУВАННЯ (LIVE SYNC)
+    connect(fullPage, &AnalyticsFullPage::configChanged, [this, smallWidget, module, pageId](const QString &newTitle){
+        // Оновлюємо віджет на дашборді
         smallWidget->setTitle(newTitle);
+        // Оновлюємо внутрішні дані модуля
         module->setTitle(newTitle);
-        saveDashboard(); // <--- АВТОЗБЕРЕЖЕННЯ ПРИ ПЕРЕЙМЕНУВАННІ
+        
+        // ОНОВЛЮЄМО САЙДБАР МИТТЄВО!
+        sidebar->updateButtonText(pageId, newTitle);
+        
+        // Зберігаємо в JSON
+        saveDashboard(); 
     });
 }
 
 // --- СТВОРЕННЯ ФІНАНСІВ ---
 void MainWindow::createFinance()
 {
+    // Перевірка, чи модуль вже існує
     for (QObject *obj : activeModules) {
         if (qobject_cast<FinanceModule*>(obj)) return; 
     }
@@ -104,30 +136,30 @@ void MainWindow::createFinance()
     activeModules.append(module);
     
     // 1. СТВОРЮЄМО МАЛИЙ ВІДЖЕТ
-    // (Попередньо додай #include "../modules/finance/FinanceSmallWidget.h" зверху файлу!)
-    // Якщо метод createSmallWidget не визначений в Base класі, то треба привести тип або додати його в Module.
-    // Але ми тільки що додали його в FinanceModule.
-    
-    // УВАГА: Якщо createSmallWidget повертає конкретний тип FinanceSmallWidget*,
-    // нам треба кастити його до QWidget* для Dashboard::addModuleWidget.
-    
-    auto *smallWidget = module->createSmallWidget(); // auto або FinanceSmallWidget*
+    auto *smallWidget = module->createSmallWidget(); 
     dashboardPage->addModuleWidget(smallWidget);
     
     // 2. СТВОРЮЄМО ПОВНУ СТОРІНКУ
     FinanceFullPage *fullPage = module->createFullPage();
-    int pageIdx = pagesStack->addWidget(fullPage);
+    QString pageId = "wallet"; // <--- Твій ID
     
-    sidebar->addMenuButton("Wallet", pageIdx);
+    registerPage(pageId, fullPage); // Додає в стек і в мапу
+    sidebar->addButton(pageId, "Wallet", "💳");
     
     // 3. ЛОГІКА ПЕРЕХОДУ
-    connect(smallWidget, &FinanceSmallWidget::clicked, [this, pageIdx]() {
-        pagesStack->setCurrentIndex(pageIdx);
+    // ТУТ БУЛА ПОМИЛКА: ми замінили pageIdx на pageId
+    connect(smallWidget, &FinanceSmallWidget::clicked, [this, pageId]() {
+        // Шукаємо індекс сторінки по ID в нашій мапі
+        if (pageMap.contains(pageId)) {
+            pagesStack->setCurrentIndex(pageMap[pageId]);
+        }
     });
 
-    pagesStack->setCurrentIndex(pageIdx);
+    // Якщо хочеш одразу відкрити гаманець після створення:
+    if (pageMap.contains(pageId)) {
+        pagesStack->setCurrentIndex(pageMap[pageId]);
+    }
 }
-
 // --- SAVE / LOAD SYSTEM ---
 
 void MainWindow::saveDashboard() {
@@ -173,4 +205,11 @@ void MainWindow::loadDashboard() {
             }
         }
     }
+}
+void MainWindow::registerPage(const QString &id, QWidget *page) {
+    int index = pagesStack->addWidget(page);
+    pageMap[id] = index; // Запам'ятовуємо: "wallet_1" це індекс 5
+}
+MainWindow::~MainWindow() {
+
 }

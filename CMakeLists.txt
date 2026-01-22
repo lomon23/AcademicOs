@@ -32,7 +32,7 @@ set(MODULES_SOURCES
     src/modules/finance/FinanceFullPage.cpp
     src/modules/finance/FinanceFullPage.h
     src/modules/finance/FinanceSmallWidget.h
-src/modules/finance/FinanceSmallWidget.cpp
+    src/modules/finance/FinanceSmallWidget.cpp
 )
 set(UI_SOURCES
     src/ui/MainWindow.cpp
@@ -45,6 +45,9 @@ set(PAGE_SOURCES
 set(COMPONENT_SOURCES
     src/ui/components/Sidebar.cpp
     src/ui/components/Sidebar.h
+    src/ui/components/SidebarItem.cpp
+    src/ui/components/SidebarItem.h
+    
 )
 set(STYLE_RESOURCES
     resources/resources.qrc

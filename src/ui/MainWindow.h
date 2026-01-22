@@ -39,6 +39,8 @@ private:
     void createAnalytics(const QString &title = "New Chart");
     void createFinance();
 
+    QMap<QString, int> pageMap; // Ключ -> Індекс сторінки
+    void registerPage(const QString &id, QWidget *page);
     // --- ПАМ'ЯТЬ (JSON) ---
     void saveDashboard(); // Зберігає список віджетів
     void loadDashboard(); // Відновлює їх   
