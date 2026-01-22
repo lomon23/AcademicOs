@@ -2,31 +2,41 @@
 #include "FinanceFullPage.h"
 #include "FinanceSmallWidget.h"
 
-FinanceModule::FinanceModule(QObject *parent) : QObject(parent)
+FinanceModule::FinanceModule(QObject *parent) : Module(parent)
 {
-    moduleTitle = "Wallet";
+    title = "Wallet"; // Використовуємо батьківське поле
     totalBalance = 0.0;
-    
-    // Завантажуємо дані при старті
-    loadData();
+    load(); // Було loadData()
+}
+
+// --- Методи специфічні для фінансів ---
+
+double FinanceModule::getTotalBalance() const {
+    return totalBalance;
+}
+
+void FinanceModule::addTransaction(const QString &category, double amount, const QString &desc) {
+    totalBalance += amount;
+    save(); // Зберігаємо зміни
+    emit balanceUpdated(totalBalance);
 }
 
 void FinanceModule::setTotalBalance(double amount) {
     totalBalance = amount;
-    saveData();
-    //emit dataChanged();
+    save(); // Було saveData()
+    emit balanceUpdated(totalBalance);
 }
 
 void FinanceModule::addAllocation(const QString &name, double amount, AllocationType type) {
     allocations.append(Allocation(name, amount, type));
-    saveData();
+    save();
     emit dataChanged();
 }
 
 void FinanceModule::removeAllocation(int index) {
     if (index >= 0 && index < allocations.size()) {
         allocations.removeAt(index);
-        saveData();
+        save();
         emit dataChanged();
     }
 }
@@ -34,8 +44,7 @@ void FinanceModule::removeAllocation(int index) {
 void FinanceModule::updateAllocation(int index, const Allocation &alloc) {
     if (index >= 0 && index < allocations.size()) {
         allocations[index] = alloc;
-        saveData();
-        // emit dataChanged(); // Можна не викликати, якщо UI вже оновлено локально
+        save();
     }
 }
 
@@ -50,21 +59,33 @@ double FinanceModule::getFreeBalance() const {
 }
 
 FinanceFullPage* FinanceModule::createFullPage() {
-    return new FinanceFullPage(this);
-}
-FinanceSmallWidget* FinanceModule::createSmallWidget() {
-    return new FinanceSmallWidget(this);
-}
-
-// --- JSON LOGIC ---
-
-void FinanceModule::saveData() {
-    QJsonObject rootObj;
+    FinanceFullPage* page = new FinanceFullPage(this);
     
-    // 1. Зберігаємо баланс
+    // 👇 ДОДАЙ ЦЕЙ БЛОК (Живе оновлення)
+    connect(this, &FinanceModule::balanceUpdated, page, [page](double newBal){
+        page->updateUI(); 
+    });
+    
+    return page;
+}
+
+FinanceSmallWidget* FinanceModule::createSmallWidget() {
+    FinanceSmallWidget* widget = new FinanceSmallWidget(this);
+    
+    // 👇 ЦЕЙ БЛОК ВІДПОВІДАЄ ЗА ЖИВЕ ОНОВЛЕННЯ
+    connect(this, &FinanceModule::balanceUpdated, widget, [widget](double newBal){
+        widget->updateUI(); // Або метод, який оновлює цифру на лейблі
+    });
+    
+    return widget;
+}
+
+// --- Реалізація методів Module ---
+
+void FinanceModule::save() { // Перейменовано з saveData
+    QJsonObject rootObj;
     rootObj["totalBalance"] = totalBalance;
 
-    // 2. Зберігаємо список
     QJsonArray allocArray;
     for (const auto &item : allocations) {
         QJsonObject itemObj;
@@ -78,7 +99,7 @@ void FinanceModule::saveData() {
     StorageManager::instance().saveConfig(STORAGE_KEY, rootObj);
 }
 
-void FinanceModule::loadData() {
+void FinanceModule::load() { // Перейменовано з loadData
     QVariant data = StorageManager::instance().loadConfig(STORAGE_KEY);
     
     if (data.isValid()) {
@@ -93,9 +114,7 @@ void FinanceModule::loadData() {
             QJsonArray arr = rootObj["allocations"].toArray();
             
             for (const auto &val : arr) {
-                // ВИПРАВЛЕНО ТУТ: val.toObject() замість toJsonObject()
-                QJsonObject itemObj = val.toObject(); 
-                
+                QJsonObject itemObj = val.toObject();
                 QString name = itemObj["name"].toString();
                 double amount = itemObj["amount"].toDouble();
                 int typeInt = itemObj["type"].toInt();

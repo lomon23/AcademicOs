@@ -13,6 +13,7 @@
 #include "../modules/finance/FinanceModule.h"
 #include "../modules/finance/FinanceFullPage.h"
 #include "../modules/finance/FinanceSmallWidget.h"
+#include "page/DailyPage.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -45,6 +46,8 @@ MainWindow::MainWindow(QWidget *parent)
     dashboardPage = new Dashboard(this);
     registerPage("dashboard", dashboardPage); // Тепер pagesStack існує, все ок!
 
+    DailyPage *dailyPage = new DailyPage(this);
+    registerPage("daily", dailyPage);
     // 6. Підключення навігації
     connect(sidebar, &Sidebar::navigationRequested, [this](const QString &id){
         if (pageMap.contains(id)) {
@@ -53,7 +56,58 @@ MainWindow::MainWindow(QWidget *parent)
             qDebug() << "Page not found for ID:" << id;
         }
     });
+    connect(dashboardPage, &Dashboard::requestDailyPage, [this](){
+        // 1. Шукаємо активний фінансовий модуль у списку
+        FinanceModule *finMod = nullptr;
+        for (Module *mod : activeModules) {
+            if (auto casted = qobject_cast<FinanceModule*>(mod)) {
+                finMod = casted;
+                break;
+            }
+        }
 
+        // 2. Отримуємо баланс (якщо модуль знайшли)
+        double currentBal = 0.0;
+        if (finMod) {
+            currentBal = finMod->getTotalBalance(); // <--- ТЕПЕР ПРАВИЛЬНА НАЗВА
+        } else {
+            qDebug() << "Warning: Finance Module not found!";
+        }
+
+        // 3. Передаємо в DailyPage
+        // (Переконайся, що pageMap["daily"] існує, тобто ти зареєстрував сторінку раніше)
+        if (pageMap.contains("daily")) {
+            DailyPage *page = qobject_cast<DailyPage*>(pagesStack->widget(pageMap["daily"]));
+            if (page) {
+                page->setWalletBalance(currentBal);
+                page->prepareForShow();
+            }
+            pagesStack->setCurrentIndex(pageMap["daily"]);
+        } else {
+            qDebug() << "Daily page not registered!";
+        }
+    });
+    connect(dailyPage, &DailyPage::walletCorrection, [this](double spent){
+        // 1. Шукаємо фінансовий модуль
+        FinanceModule *finMod = nullptr;
+        for (Module *mod : activeModules) {
+            if (auto casted = qobject_cast<FinanceModule*>(mod)) {
+                finMod = casted;
+                break;
+            }
+        }
+
+        if (finMod) {
+            // 2. Виконуємо транзакцію
+            // spent = це витрата (наприклад, 10 грн).
+            // addTransaction додає суму, тому передаємо з мінусом (-10).
+            finMod->addTransaction("Daily Correction", -spent, "Auto-adjustment from Daily Check-in");
+            
+            qDebug() << "✅ Wallet updated! New balance:" << finMod->getTotalBalance();
+        } else {
+            qDebug() << "❌ Error: Finance Module not found during save!";
+        }
+    });
     connect(dashboardPage, &Dashboard::requestWidget, this, &MainWindow::handleWidgetCreation);
 
     // 7. Завантаження стану

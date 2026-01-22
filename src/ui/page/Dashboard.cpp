@@ -5,6 +5,9 @@
 #include <QDebug>
 #include <QStringListModel>
 
+// 👇 Не забудь перевірити шлях, якщо папки називаються інакше
+#include "../components/WelcomeWidget.h" 
+
 Dashboard::Dashboard(QWidget *parent) : QWidget(parent)
 {
     setupUi();
@@ -65,6 +68,21 @@ void Dashboard::setupUi() {
     mainLayout->addWidget(searchContainer);
 
 
+    // --- WELCOME WIDGET (НОВЕ) ---
+    // Додаємо його перед сіткою, щоб він був зверху як Hero-секция
+    
+    WelcomeWidget *welcome = new WelcomeWidget(this);
+    mainLayout->addWidget(welcome);
+
+    // Підключаємо кнопку (поки просто виводимо в консоль)
+    connect(welcome, &WelcomeWidget::startDayClicked, [this](){
+        emit requestDailyPage(); // <--- Прокидаємо сигнал вгору
+    });
+
+    mainLayout->addSpacing(10); // Невеликий відступ перед сіткою
+    // ----------------------------
+
+
     // --- GRID (Для віджетів) ---
     // Ми кладемо Grid у ScrollArea або просто розтягуємо
     QWidget *gridContainer = new QWidget(this);
@@ -85,7 +103,7 @@ void Dashboard::setupSearch() {
     // Налаштування автопідказки
     completer = new QCompleter(wordList, this);
     completer->setCaseSensitivity(Qt::CaseInsensitive);
-    completer->setFilterMode(Qt::MatchContains); // Шукає "Wallet" навіть якщо написав не з початку
+    completer->setFilterMode(Qt::MatchContains); 
     
     // Стилізація випадаючого списку (Popup)
     QAbstractItemView *popup = completer->popup();
@@ -102,7 +120,7 @@ void Dashboard::onAddClicked() {
     searchContainer->setVisible(!isVisible);
 
     if (!isVisible) {
-        searchBar->setFocus(); // Зразу ставимо фокус, щоб писати
+        searchBar->setFocus(); 
         searchBar->clear();
     }
 }
@@ -124,7 +142,7 @@ void Dashboard::onSearchReturnPressed() {
 void Dashboard::addModuleWidget(QWidget *widget) {
     if (!widget) return;
     
-    // Шукаємо вільне місце в сітці (тупий алгоритм, але робочий)
+    // Шукаємо вільне місце в сітці
     int row = widgets.size() / 2; // 2 стовпці
     int col = widgets.size() % 2;
     

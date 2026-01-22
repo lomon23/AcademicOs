@@ -12,11 +12,11 @@ class FinanceFullPage : public QWidget {
     Q_OBJECT
 public:
     explicit FinanceFullPage(FinanceModule *module, QWidget *parent = nullptr);
-
+    void updateUI();
 private slots:
     void onBalanceChanged(const QString &text);
     void onAddClicked();
-    void updateUI();
+ 
     
 private:
     FinanceModule *module;

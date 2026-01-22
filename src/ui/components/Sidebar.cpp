@@ -12,6 +12,7 @@ Sidebar::Sidebar(QWidget *parent) : QWidget(parent) {
     // --- 1. СЕКЦІЯ MAIN ---
     addHeader("MAIN");
     addButton("dashboard", "Dashboard", "⌂");
+    addButton("daily", "Daily Check-in", "📝");
     addButton("todo", "Todo List", "☑️");
     addButton("calendar", "Calendar", "📅");
 

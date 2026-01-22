@@ -17,6 +17,7 @@ public:
 signals:
     void widgetAdded();
     void requestWidget(const QString &widgetType);
+    void requestDailyPage(); // <--- НОВИЙ СИГНАЛ
 private slots:
     void onAddClicked();
     void onSearchReturnPressed();

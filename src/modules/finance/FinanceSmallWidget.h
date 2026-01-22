@@ -10,15 +10,18 @@ class FinanceSmallWidget : public QWidget {
     Q_OBJECT
 public:
     explicit FinanceSmallWidget(FinanceModule *module, QWidget *parent = nullptr);
+
+    void updateUI();
 signals:
     void clicked(); // Сигнал натискання
+    
 
 protected:
     // Переозначаємо клік мишкою
     void mousePressEvent(QMouseEvent *event) override;
 
 private slots:
-    void updateUI();
+    
 
 private:
     FinanceModule *module;

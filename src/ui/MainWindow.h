@@ -12,6 +12,7 @@
 #include "components/Sidebar.h"
 #include "page/Dashboard.h" // Перевір шлях (page чи pages?)
 #include "../modules/analytics/AnalyticsModule.h" // <--- Для AnalyticsModule
+#include "../modules/Module.h"
 
 class MainWindow : public QMainWindow
 {
@@ -33,7 +34,7 @@ private:
     Dashboard *dashboardPage;
 
     // Список всіх активних модулів (Аналітика, Фінанси...)
-    QList<QObject*> activeModules; 
+    QList<Module*> activeModules;
 
     // --- ФАБРИЧНІ МЕТОДИ ---
     void createAnalytics(const QString &title = "New Chart");

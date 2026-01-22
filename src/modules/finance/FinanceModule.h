@@ -1,46 +1,38 @@
 #ifndef FINANCEMODULE_H
 #define FINANCEMODULE_H
 
-#include <QObject>
+#include "../Module.h" // Підключаємо батька
 #include <QVector>
-#include <QString>
 #include <QJsonObject>
 #include <QJsonArray>
 #include "../../core/StorageManager.h"
 
-// --- 1. Описуємо Типи (Важливо, щоб це було ПЕРЕД класом) ---
-
-enum class AllocationType {
-    Debt,       // Червоний (Борг)
-    Reserved,   // Жовтий (Зобов'язання)
-    Goal        // Зелений (Ціль)
-};
+// --- Типи даних ---
+enum class AllocationType { Debt, Reserved, Goal };
 
 struct Allocation {
     QString name;
     double amount;
     AllocationType type;
-
-    // Конструктор
     Allocation(QString n = "", double a = 0.0, AllocationType t = AllocationType::Goal) 
         : name(n), amount(a), type(t) {}
 };
 
-// Forward declaration
 class FinanceFullPage;
 class FinanceSmallWidget;
-// --- 2. Сам Клас ---
 
-class FinanceModule : public QObject {
+// Спадкуємось від Module
+class FinanceModule : public Module {
     Q_OBJECT
 public:
     explicit FinanceModule(QObject *parent = nullptr);
 
-    // Робота з балансом
+    // Специфічні методи фінансів
+    double getTotalBalance() const;
+    void addTransaction(const QString &category, double amount, const QString &desc);
     void setTotalBalance(double amount);
-    double getTotalBalance() const { return totalBalance; }
-
-    // Робота зі списком (CRUD)
+    
+    // CRUD для списку
     QVector<Allocation>& getAllocations() { return allocations; }
     void addAllocation(const QString &name, double amount, AllocationType type);
     void removeAllocation(int index);
@@ -50,24 +42,22 @@ public:
     double getAllocatedSum() const;
     double getFreeBalance() const;
 
-    // UI та інше
+    // Фабрики віджетів
     FinanceFullPage* createFullPage();
     FinanceSmallWidget* createSmallWidget();
-    void setTitle(const QString &title) { moduleTitle = title; }
-    QString getTitle() const { return moduleTitle; }
 
-    // Збереження
-    void saveData();
-    void loadData();
+    // Реалізуємо методи Module (замість saveData/loadData)
+    void save() override;
+    void load() override;
 
 signals:
     void dataChanged();
+    void balanceUpdated(double newBalance);
 
 private:
-    QString moduleTitle;
-    double totalBalance;
+    // moduleTitle видалили, бо є title в батька
+    double totalBalance = 0.0; // Залишили тільки одну декларацію
     QVector<Allocation> allocations;
-
     const QString STORAGE_KEY = "finance_wallet";
 };
 

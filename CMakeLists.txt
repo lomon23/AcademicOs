@@ -18,8 +18,13 @@ set(MAIN_SOURCES
 set(CORE_SOURCES
     src/core/StorageManager.cpp
     src/core/StorageManager.h
+    src/core/MetricManager.cpp
+    src/core/MetricManager.h
+    
 )
 set(MODULES_SOURCES
+    src/modules/Module.h
+    
     src/modules/analytics/AnalyticsSmallWidget.h
     src/modules/analytics/AnalyticsModule.h
     src/modules/analytics/AnalyticsFullPage.h
@@ -33,6 +38,8 @@ set(MODULES_SOURCES
     src/modules/finance/FinanceFullPage.h
     src/modules/finance/FinanceSmallWidget.h
     src/modules/finance/FinanceSmallWidget.cpp
+
+    
 )
 set(UI_SOURCES
     src/ui/MainWindow.cpp
@@ -41,12 +48,17 @@ set(UI_SOURCES
 set(PAGE_SOURCES
     src/ui/page/Dashboard.cpp
     src/ui/page/Dashboard.h
+    src/ui/page/DailyPage.cpp
+    src/ui/page/DailyPage.h
 )
 set(COMPONENT_SOURCES
     src/ui/components/Sidebar.cpp
     src/ui/components/Sidebar.h
     src/ui/components/SidebarItem.cpp
     src/ui/components/SidebarItem.h
+
+    src/ui/components/WelcomeWidget.cpp
+    src/ui/components/WelcomeWidget.h
     
 )
 set(STYLE_RESOURCES
