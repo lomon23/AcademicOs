@@ -87,7 +87,7 @@ MainWindow::MainWindow(QWidget *parent)
             qDebug() << "Daily page not registered!";
         }
     });
-    connect(dailyPage, &DailyPage::walletCorrection, [this](double spent){
+    connect(dailyPage, &DailyPage::walletCorrection, [this](double diff){
         // 1. Шукаємо фінансовий модуль
         FinanceModule *finMod = nullptr;
         for (Module *mod : activeModules) {
@@ -99,9 +99,9 @@ MainWindow::MainWindow(QWidget *parent)
 
         if (finMod) {
             // 2. Виконуємо транзакцію
-            // spent = це витрата (наприклад, 10 грн).
-            // addTransaction додає суму, тому передаємо з мінусом (-10).
-            finMod->addTransaction("Daily Correction", -spent, "Auto-adjustment from Daily Check-in");
+            // diff — це вже готова різниця (+ або -), яку порахував DailyPage.
+            // Тому передаємо її як є (БЕЗ мінуса перед diff).
+            finMod->addTransaction("Daily Correction", diff, "Auto-adjustment");
             
             qDebug() << "✅ Wallet updated! New balance:" << finMod->getTotalBalance();
         } else {

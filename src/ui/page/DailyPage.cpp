@@ -81,51 +81,55 @@ void DailyPage::buildForm() {
                 break;
             }
             case MetricType::Money: {
-                // Створюємо контейнер для "Звірки балансу"
                 QWidget *moneyContainer = new QWidget();
                 QVBoxLayout *vLayout = new QVBoxLayout(moneyContainer);
                 vLayout->setContentsMargins(0,0,0,0);
                 vLayout->setSpacing(5);
 
-                // 1. Інформація: Скільки має бути
+                // 1. Інфо
                 QLabel *infoLabel = new QLabel(QString("System Balance: %1 %2").arg(currentBalance).arg(def.unit));
                 infoLabel->setStyleSheet("color: #888; font-size: 12px;");
                 vLayout->addWidget(infoLabel);
 
-                // 2. Ввід: Скільки є насправді
+                // 2. Інпут (Actual Money)
                 QDoubleSpinBox *spin = new QDoubleSpinBox();
-                spin->setRange(0, 1000000); // Від 0 до мільйона
-                spin->setValue(currentBalance); // За замовчуванням ставимо поточний баланс
+                spin->setRange(-1000000, 1000000); // Дозволяємо і мінуси (борги)
+                spin->setValue(currentBalance); 
                 spin->setSuffix(" " + def.unit);
                 spin->setStyleSheet("background: #333; color: white; padding: 8px; border-radius: 4px; font-weight: bold; font-size: 14px;");
                 vLayout->addWidget(spin);
 
-                // 3. Підказка: Скільки витрачено (Різниця)
-                QLabel *diffLabel = new QLabel("Spent today: 0 " + def.unit);
-                diffLabel->setStyleSheet("color: #00E676; font-weight: bold; font-size: 13px;");
+                // 3. Різниця (Live calculation)
+                QLabel *diffLabel = new QLabel("No changes");
+                diffLabel->setStyleSheet("color: #888; font-weight: bold; font-size: 13px;");
                 vLayout->addWidget(diffLabel);
 
-                // Живий перерахунок при зміні значення
-                connect(spin, &QDoubleSpinBox::valueChanged, [this, diffLabel, def](double newVal){
-                    double diff = currentBalance - newVal;
-                    if (diff >= 0) {
-                        diffLabel->setText(QString("Spent today: %1 %2").arg(diff).arg(def.unit));
-                        diffLabel->setStyleSheet("color: #FF5252;"); // Червоний (Витрата)
+                // 👇 ОНОВЛЕНА ЛОГІКА ТУТ
+                connect(spin, &QDoubleSpinBox::valueChanged, [this, diffLabel, def](double actualVal){
+                    double diff = actualVal - currentBalance; // Формула: Реальність - Система
+
+                    if (diff == 0) {
+                        diffLabel->setText("No changes");
+                        diffLabel->setStyleSheet("color: #888;");
+                    } else if (diff < 0) {
+                        // Витратив (червоний)
+                        diffLabel->setText(QString("Spent: %1 %2").arg(diff).arg(def.unit));
+                        diffLabel->setStyleSheet("color: #FF5252;"); 
                     } else {
-                        diffLabel->setText(QString("Income today: %1 %2").arg(-diff).arg(def.unit));
-                        diffLabel->setStyleSheet("color: #00E676;"); // Зелений (Дохід/Знайшов гроші)
+                        // Знайшов/Заробив (зелений)
+                        diffLabel->setText(QString("Income: +%1 %2").arg(diff).arg(def.unit));
+                        diffLabel->setStyleSheet("color: #00E676;"); 
                     }
                 });
 
-                inputWidget = spin; // Зберігаємо спінбокс як основний інпут для зчитування
+                inputWidget = spin;
                 
-                // Додаємо в форму контейнер, а не просто спінбокс
-                QLabel *label = new QLabel(def.name + " (Actual)");
+                QLabel *label = new QLabel(def.name);
                 label->setStyleSheet("color: #DDD; font-size: 14px; margin-top: 10px;");
                 formLayout->addRow(label, moneyContainer);
                 
                 inputs[def.id] = {def.type, spin};
-                continue; // Пропускаємо стандартне додавання
+                continue;
             }
             case MetricType::Slider: {
                 // Для слайдера робимо контейнер (Слайдер + Цифра збоку)
@@ -188,13 +192,17 @@ void DailyPage::onSaveClicked() {
         switch (field.type) {
             case MetricType::Money: {
                 double actualBalance = static_cast<QDoubleSpinBox*>(field.widget)->value();
-                double spent = currentBalance - actualBalance; // 3130 - 3000 = 130 (Витратив)
                 
-                valueToLog = spent; 
+                // ФОРМУЛА: Що_є_зараз - Що_знає_система
+                // Якщо ввів 3000, а було 3130 -> 3000 - 3130 = -130.
+                double diff = actualBalance - currentBalance; 
                 
-                // Якщо витрата не нульова, треба оновити і реальний гаманець!
-                if (spent != 0) {
-                    emit walletCorrection(spent);
+                valueToLog = actualBalance; // В лог пишемо "3000" (стан)
+                
+                if (diff != 0) {
+                    // ВАЖЛИВО: Тут ми вже НЕ ставимо мінус вручну!
+                    // emit walletCorrection(-diff); <--- БУЛО ТАК (НЕПРАВИЛЬНО для нової логіки)
+                    emit walletCorrection(diff);   // <--- МАЄ БУТИ ТАК (знак вже правильний)
                 }
                 break;
             }

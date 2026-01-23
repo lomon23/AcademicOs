@@ -11,9 +11,6 @@ FinanceModule::FinanceModule(QObject *parent) : Module(parent)
 
 // --- Методи специфічні для фінансів ---
 
-double FinanceModule::getTotalBalance() const {
-    return totalBalance;
-}
 
 void FinanceModule::addTransaction(const QString &category, double amount, const QString &desc) {
     totalBalance += amount;

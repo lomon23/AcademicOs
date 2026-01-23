@@ -28,7 +28,7 @@ public:
     explicit FinanceModule(QObject *parent = nullptr);
 
     // Специфічні методи фінансів
-    double getTotalBalance() const;
+    double getTotalBalance() const { return totalBalance; }
     void addTransaction(const QString &category, double amount, const QString &desc);
     void setTotalBalance(double amount);
     
