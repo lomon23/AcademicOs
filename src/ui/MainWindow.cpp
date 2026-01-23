@@ -21,74 +21,48 @@ MainWindow::MainWindow(QWidget *parent)
     // 1. Налаштування вікна
     this->resize(1280, 720);
     this->setWindowTitle("Academic OS");
-
     centralWidget = new QWidget(this);
     this->setCentralWidget(centralWidget);
 
-    // 2. Створення лейауту
+    // 2. Лейаут
     mainLayout = new QGridLayout(centralWidget);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
-
-    // 3. Створення Сайдбару
-    sidebar = new Sidebar(this);
-    mainLayout->addWidget(sidebar, 0, 0, 1, 1);
-
-    // 4. Створення Стеку сторінок (ВАЖЛИВО: Створити ПЕРЕД registerPage)
-    pagesStack = new QStackedWidget(centralWidget);
-    mainLayout->addWidget(pagesStack, 0, 1, 1, 1);
-
-    // Налаштування пропорцій (сайдбар вузький, контент широкий)
     mainLayout->setColumnStretch(0, 0);
     mainLayout->setColumnStretch(1, 1);
 
-    // 5. Створення Дашборду і реєстрація
-    dashboardPage = new Dashboard(this);
-    registerPage("dashboard", dashboardPage); // Тепер pagesStack існує, все ок!
+    // 3. Компоненти
+    sidebar = new Sidebar(this);
+    mainLayout->addWidget(sidebar, 0, 0, 1, 1);
 
-    DailyPage *dailyPage = new DailyPage(this);
+    pagesStack = new QStackedWidget(centralWidget);
+    mainLayout->addWidget(pagesStack, 0, 1, 1, 1);
+
+    // 4. Сторінки
+    dashboardPage = new Dashboard(this);
+    registerPage("dashboard", dashboardPage);
+
+    DailyPage *dailyPage = new DailyPage(this); // (До речі, краще зробити dailyPage членом класу в .h, але поки ок)
     registerPage("daily", dailyPage);
-    // 6. Підключення навігації
+
+    // 5. НАВІГАЦІЯ (Ось тут ми спростили!)
+    
+    // Сайдбар
     connect(sidebar, &Sidebar::navigationRequested, [this](const QString &id){
-        if (pageMap.contains(id)) {
+        if (id == "daily") {
+            openDailyPage(); // Викликаємо функцію
+        } else if (pageMap.contains(id)) {
             pagesStack->setCurrentIndex(pageMap[id]);
         } else {
             qDebug() << "Page not found for ID:" << id;
         }
     });
-    connect(dashboardPage, &Dashboard::requestDailyPage, [this](){
-        // 1. Шукаємо активний фінансовий модуль у списку
-        FinanceModule *finMod = nullptr;
-        for (Module *mod : activeModules) {
-            if (auto casted = qobject_cast<FinanceModule*>(mod)) {
-                finMod = casted;
-                break;
-            }
-        }
 
-        // 2. Отримуємо баланс (якщо модуль знайшли)
-        double currentBal = 0.0;
-        if (finMod) {
-            currentBal = finMod->getTotalBalance(); // <--- ТЕПЕР ПРАВИЛЬНА НАЗВА
-        } else {
-            qDebug() << "Warning: Finance Module not found!";
-        }
+    // Кнопка на дашборді (ТЕПЕР ЧИСТО!)
+    connect(dashboardPage, &Dashboard::requestDailyPage, this, &MainWindow::openDailyPage);
 
-        // 3. Передаємо в DailyPage
-        // (Переконайся, що pageMap["daily"] існує, тобто ти зареєстрував сторінку раніше)
-        if (pageMap.contains("daily")) {
-            DailyPage *page = qobject_cast<DailyPage*>(pagesStack->widget(pageMap["daily"]));
-            if (page) {
-                page->setWalletBalance(currentBal);
-                page->prepareForShow();
-            }
-            pagesStack->setCurrentIndex(pageMap["daily"]);
-        } else {
-            qDebug() << "Daily page not registered!";
-        }
-    });
+    // 6. Логіка гаманця (це поки можна лишити тут, або теж винести в окремий метод saveDailyCheckIn)
     connect(dailyPage, &DailyPage::walletCorrection, [this](double diff){
-        // 1. Шукаємо фінансовий модуль
         FinanceModule *finMod = nullptr;
         for (Module *mod : activeModules) {
             if (auto casted = qobject_cast<FinanceModule*>(mod)) {
@@ -96,24 +70,16 @@ MainWindow::MainWindow(QWidget *parent)
                 break;
             }
         }
-
         if (finMod) {
-            // 2. Виконуємо транзакцію
-            // diff — це вже готова різниця (+ або -), яку порахував DailyPage.
-            // Тому передаємо її як є (БЕЗ мінуса перед diff).
             finMod->addTransaction("Daily Correction", diff, "Auto-adjustment");
-            
-            qDebug() << "✅ Wallet updated! New balance:" << finMod->getTotalBalance();
-        } else {
-            qDebug() << "❌ Error: Finance Module not found during save!";
+            qDebug() << "✅ Wallet updated!";
         }
     });
-    connect(dashboardPage, &Dashboard::requestWidget, this, &MainWindow::handleWidgetCreation);
 
-    // 7. Завантаження стану
+    // 7. Інше
+    connect(dashboardPage, &Dashboard::requestWidget, this, &MainWindow::handleWidgetCreation);
     loadDashboard();
     
-    // Старт на дашборді
     if (pageMap.contains("dashboard")) {
         pagesStack->setCurrentIndex(pageMap["dashboard"]);
     }
@@ -264,6 +230,34 @@ void MainWindow::registerPage(const QString &id, QWidget *page) {
     int index = pagesStack->addWidget(page);
     pageMap[id] = index; // Запам'ятовуємо: "wallet_1" це індекс 5
 }
+
+void MainWindow::openDailyPage() {
+    // 1. Шукаємо фінанси
+    FinanceModule *finMod = nullptr;
+    for (Module *mod : activeModules) {
+        if (auto casted = qobject_cast<FinanceModule*>(mod)) {
+            finMod = casted;
+            break;
+        }
+    }
+
+    // 2. Беремо баланс
+    double currentBal = 0.0;
+    if (finMod) {
+        currentBal = finMod->getTotalBalance();
+    }
+
+    // 3. Відкриваємо сторінку
+    if (pageMap.contains("daily")) {
+        DailyPage *page = qobject_cast<DailyPage*>(pagesStack->widget(pageMap["daily"]));
+        if (page) {
+            page->setWalletBalance(currentBal);
+            page->prepareForShow(); // <--- ОСЬ ВОНО, ОНОВЛЕННЯ ФОРМИ!
+        }
+        pagesStack->setCurrentIndex(pageMap["daily"]);
+    }
+}
+
 MainWindow::~MainWindow() {
 
 }

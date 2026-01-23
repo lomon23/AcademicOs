@@ -40,6 +40,8 @@ private:
     void createAnalytics(const QString &title = "New Chart");
     void createFinance();
 
+    void openDailyPage();
+
     QMap<QString, int> pageMap; // Ключ -> Індекс сторінки
     void registerPage(const QString &id, QWidget *page);
     // --- ПАМ'ЯТЬ (JSON) ---
