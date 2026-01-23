@@ -6,6 +6,7 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QScrollArea>
+#include <QInputDialog>
 
 // Підключаємо наші компоненти
 #include "../../../core/todo/ToDoModule.h"
@@ -23,6 +24,8 @@ public:
 private slots:
     void onAddTaskClicked();
     void onTaskStatusChanged(QString taskId, bool isDone);
+
+    void onAddCategoryClicked();
 
 private:
     // Посилання на модуль (шукаємо його динамічно)

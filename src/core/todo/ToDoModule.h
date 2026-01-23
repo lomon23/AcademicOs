@@ -23,8 +23,11 @@ public:
 
     // --- CRUD ---
     void addCategory(const QString& name, const QString& color);
-    void addTask(const QString& title, const QString& categoryId);
+    void addTask(const QString& title, const QString& categoryId, const QString& parentTaskId = "");
     void toggleTask(const QString& taskId);
+    void deleteTask(const QString& taskId);
+
+    void renameTask(const QString& taskId, const QString& newTitle);
     
     // Геттери для UI
     QVector<ToDoCategory> getCategories() const { return categories; }

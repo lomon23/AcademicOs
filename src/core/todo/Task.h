@@ -20,14 +20,16 @@ struct ToDoTask {
     QString title;
     bool isDone;
     QString categoryId; 
+    QString parentTaskId; // <--- НОВЕ: ID батьківського завдання (для під-списків)
     bool isRecurring;
     QDate createdDate;
 
-    ToDoTask(QString t = "", QString catId = "") 
+    ToDoTask(QString t = "", QString catId = "", QString parentId = "") 
         : id(QUuid::createUuid().toString()), 
           title(t), 
           isDone(false), 
           categoryId(catId), 
+          parentTaskId(parentId),
           isRecurring(false),
           createdDate(QDate::currentDate()) {}
 };
