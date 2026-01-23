@@ -3,41 +3,58 @@
 
 #include <QWidget>
 #include <QVBoxLayout>
+#include <QHBoxLayout> // Додаємо горизонтальний лейаут
 #include <QLineEdit>
 #include <QComboBox>
 #include <QScrollArea>
+#include <QPushButton>
 
-// Підключаємо наші компоненти
 #include "../../../core/todo/ToDoModule.h"
 #include "CategoryWidget.h"
+#include "ToDoRightBar.h" // <-- Підключаємо наш новий віджет
 
 class ToDoPage : public QWidget {
     Q_OBJECT
 
 public:
     explicit ToDoPage(QWidget *parent = nullptr);
-    void setModule(ToDoModule *m) { todoModule = m; }
-    // Метод, який викликається перед показом (щоб оновити дані)
     void refreshData();
+    void setModule(ToDoModule *m) { todoModule = m; } 
 
 private slots:
     void onAddTaskClicked();
     void onTaskStatusChanged(QString taskId, bool isDone);
+    void onAddCategoryClicked(); // Залишаємо (якщо є) або видаляємо
 
 private:
-    // Посилання на модуль (шукаємо його динамічно)
-    ToDoModule* getModule();
     ToDoModule *todoModule = nullptr;
-    // UI Елементи
+    ToDoModule* getModule();
+
+    // UI Elements
     QLineEdit *taskInput;
     QComboBox *categoryCombo;
-    QVBoxLayout *categoriesLayout; // Сюди додаємо віджети категорій
+    QVBoxLayout *categoriesLayout;
     
-    // Допоміжний метод для побудови UI
+    // 👇 НОВЕ: Правий сайдбар
+    ToDoRightBar *rightBar; 
+    
+    // 👇 НОВЕ: Кнопка вибору кольору та поточний індекс кольору
+    QPushButton *colorSelectorBtn;
+    int currentColorIndex = 0;
+    const QStringList categoryColors = {
+        "#FF5733", // Red
+        "#33FF57", // Green
+        "#3357FF", // Blue
+        "#F033FF", // Purple
+        "#FFFF33", // Yellow
+        "#00E676"  // Teal
+    };
+
     void setupUI();
-    
-    // Метод очистки перед оновленням
     void clearLayout();
+    
+    // Метод перемикання кольору
+    void cycleColor();
 };
 
 #endif // TODOPAGE_H

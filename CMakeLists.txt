@@ -61,6 +61,13 @@ set(PAGE_SOURCES
     src/ui/page/todo/CategoryWidget.h
     src/ui/page/todo/ToDoPage.cpp
     src/ui/page/todo/ToDoPage.h
+    src/ui/page/todo/ToDoRightBar.cpp
+    src/ui/page/todo/ToDoRightBar.h
+    src/ui/page/todo/ToDoSmallWidget.cpp
+    src/ui/page/todo/ToDoSmallWidget.h
+
+    src/ui/page/calendar/CalendarPage.cpp
+    src/ui/page/calendar/CalendarPage.h
 )
 set(COMPONENT_SOURCES
     src/ui/components/Sidebar.cpp

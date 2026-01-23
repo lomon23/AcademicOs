@@ -7,6 +7,8 @@
 
 // 👇 Не забудь перевірити шлях, якщо папки називаються інакше
 #include "../components/WelcomeWidget.h" 
+#include "../../core/todo/ToDoModule.h"
+#include "../page/todo/ToDoSmallWidget.h"
 
 Dashboard::Dashboard(QWidget *parent) : QWidget(parent)
 {
@@ -41,7 +43,7 @@ void Dashboard::setupUi() {
     headerLayout->addWidget(addBtn);
 
     mainLayout->addWidget(header);
-
+    
 
     // --- SEARCH BAR (Прихований за замовчуванням) ---
     searchContainer = new QWidget(this);
@@ -93,6 +95,19 @@ void Dashboard::setupUi() {
     gridLayout->setSpacing(20);
     
     mainLayout->addWidget(gridContainer);
+
+    ToDoModule *todoMod = nullptr;
+    if (todoMod) {
+        ToDoSmallWidget *todoWidget = qobject_cast<ToDoSmallWidget*>(todoMod->createSmallWidget());
+        
+        // Клік по віджету -> відкрити сторінку "todo"
+        connect(todoWidget, &ToDoSmallWidget::clicked, [this](){
+            emit navigationRequested("todo"); // Треба додати цей сигнал в Dashboard
+        });
+
+        // Додаємо в сітку (ряд 0, колонка 1 - справа від привітання, наприклад)
+        gridLayout->addWidget(todoWidget, 0, 1, 2, 1); 
+    }
 }
 
 void Dashboard::setupSearch() {
@@ -149,4 +164,25 @@ void Dashboard::addModuleWidget(QWidget *widget) {
     // Додаємо в сітку
     gridLayout->addWidget(widget, row, col);
     widgets.append(widget);
+}
+
+void Dashboard::setToDoModule(ToDoModule *module) {
+    todoModule = module;
+    if (todoModule) {
+        // Створюємо малий віджет через модуль
+        QWidget *w = todoModule->createSmallWidget();
+        
+        // Кастимо до нашого типу, щоб підключити сигнал
+        ToDoSmallWidget *smallWidget = qobject_cast<ToDoSmallWidget*>(w);
+        
+        if (smallWidget) {
+            connect(smallWidget, &ToDoSmallWidget::clicked, [this](){
+                emit navigationRequested("todo"); // Тепер це працюватиме!
+            });
+            
+            // Додаємо в сітку (ряд 0, колонка 1 - тобто справа)
+            // Або вибери інше місце в грідах
+            gridLayout->addWidget(smallWidget, 2, 2, 2, 1);
+        }
+    }
 }

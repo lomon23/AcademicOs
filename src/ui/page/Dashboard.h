@@ -7,6 +7,7 @@
 #include <QLineEdit>
 #include <QCompleter> // Для автопідказки
 #include "../../modules/analytics/AnalyticsSmallWidget.h"
+#include "../../core/todo/ToDoModule.h"
 
 class Dashboard :public QWidget {
     Q_OBJECT
@@ -14,10 +15,12 @@ class Dashboard :public QWidget {
 public:
     explicit Dashboard(QWidget *parent = nullptr);
     void addModuleWidget(QWidget* widget);
+    void setToDoModule(ToDoModule *module);
 signals:
     void widgetAdded();
     void requestWidget(const QString &widgetType);
     void requestDailyPage(); // <--- НОВИЙ СИГНАЛ
+    void navigationRequested(const QString &pageId);
 private slots:
     void onAddClicked();
     void onSearchReturnPressed();
@@ -26,14 +29,15 @@ private:
     QVBoxLayout *mainLayout;    // Головний вертикальний
     QWidget *searchContainer;   // Контейнер для поля пошуку (щоб ховати/показувати)
     QGridLayout *gridLayout;    // Сітка для віджетів
-
+    
     // UI Elements
     QLineEdit *searchBar;
     QCompleter *completer;
 
     // State
     QVector<QWidget*> widgets;
-    
+    ToDoModule *todoModule = nullptr;
+    void updateToDoWidget();
     void setupUi();
     void setupSearch(); // Налаштування автодоповнення
 };

@@ -16,6 +16,7 @@
 
 #include "page/DailyPage.h"
 #include "page/todo/ToDoPage.h"
+#include "page/calendar/CalendarPage.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -44,6 +45,9 @@ MainWindow::MainWindow(QWidget *parent)
     dashboardPage = new Dashboard(this);
     registerPage("dashboard", dashboardPage);
 
+    CalendarPage *calendarPage = new CalendarPage(this);
+    registerPage("calendar", calendarPage);
+    
     DailyPage *dailyPage = new DailyPage(this); // (До речі, краще зробити dailyPage членом класу в .h, але поки ок)
     registerPage("daily", dailyPage);
 
@@ -103,6 +107,12 @@ MainWindow::MainWindow(QWidget *parent)
             finMod->addTransaction("Daily Correction", diff, "Auto-adjustment");
             qDebug() << "✅ Wallet updated!";
         }
+    });
+    dashboardPage->setToDoModule(todoModule);
+    connect(dashboardPage, &Dashboard::navigationRequested, [this](QString pageId){
+        // Логіка перемикання сторінок (копія з сайдбару або виклик методу)
+        // Найкраще: симулювати клік сайдбару або просто:
+        if (pageMap.contains(pageId)) pagesStack->setCurrentIndex(pageMap[pageId]);
     });
 
     // 7. Інше

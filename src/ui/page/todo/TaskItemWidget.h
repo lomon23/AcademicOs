@@ -5,37 +5,57 @@
 #include <QLabel>
 #include <QCheckBox>
 #include <QHBoxLayout>
-
-// Підключаємо структуру даних з CORE
-// (Можливо, шлях буде іншим, наприклад "../../core/todo/Task.h" або просто "core/todo/Task.h")
-#include "../../../core/todo/Task.h" 
+#include <QVBoxLayout>
+#include <QPushButton>
+#include <QLineEdit> // <-- Додали
+#include "../../../core/todo/Task.h"
 
 class TaskItemWidget : public QWidget {
     Q_OBJECT
 
 public:
     explicit TaskItemWidget(const ToDoTask &task, QWidget *parent = nullptr);
-
-    // Метод для оновлення даних без перестворення віджета
     void updateData(const ToDoTask &task);
-    
-    // Геттер ID, щоб батьківський віджет знав, хто це
     QString getTaskId() const { return taskId; }
 
+    void addChildTask(QWidget* childWidget);
+
 signals:
-    // Сигнал нагору: "Мене клікнули, ось мій ID і новий стан"
     void statusChanged(QString taskId, bool isDone);
+    void deleteRequested(QString taskId);
+    void addSubTaskRequested(QString parentTaskId);
+    
+    // 👇 Сигнал про зміну назви
+    void renameRequested(QString taskId, QString newTitle); 
 
 private slots:
     void onCheckboxClicked(int state);
+    void onEditClicked(); // Клік на олівець
+    void onSaveClicked(); // Збереження редагування
 
 private:
     QString taskId;
     QCheckBox *checkBox;
+    
+    // UI для перегляду
     QLabel *titleLabel;
     
-    // Внутрішній метод для зміни стилю (закреслення тексту)
+    // UI для редагування
+    QLineEdit *titleEdit;
+    
+    // Кнопки
+    QPushButton *editBtn;
+    QPushButton *deleteBtn;
+    QPushButton *addSubTaskBtn;
+
+    QVBoxLayout *mainLayout; 
+    QWidget *childrenContainer; 
+    QVBoxLayout *childrenLayout;
+
+    bool isEditMode = false; // Стан віджета
+
     void updateTextStyle(bool isDone);
+    void toggleEditMode(bool enable); // Перемикач
 };
 
 #endif // TASKITEMWIDGET_H
