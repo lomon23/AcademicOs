@@ -4,16 +4,18 @@
 #include <QUuid>
 
 #include "../core/StorageManager.h"
-
+#include "../core/todo/ToDoModule.h"
 // Modules
 #include "../modules/analytics/AnalyticsSmallWidget.h"
 #include "../modules/analytics/AnalyticsFullPage.h"
 #include "../modules/analytics/AnalyticsModule.h"
-
 #include "../modules/finance/FinanceModule.h"
 #include "../modules/finance/FinanceFullPage.h"
 #include "../modules/finance/FinanceSmallWidget.h"
+
+
 #include "page/DailyPage.h"
+#include "page/todo/ToDoPage.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -45,15 +47,42 @@ MainWindow::MainWindow(QWidget *parent)
     DailyPage *dailyPage = new DailyPage(this); // (До речі, краще зробити dailyPage членом класу в .h, але поки ок)
     registerPage("daily", dailyPage);
 
+    // --- TODO MODULE SETUP ---
+    // 1. Створюємо модуль (Бекенд)
+    ToDoModule *todoModule = new ToDoModule(this);
+    activeModules.append(todoModule); // Додаємо в список активних модулів
+
+    // 2. Створюємо сторінку (Фронтенд)
+    ToDoPage *todoPage = new ToDoPage(this);
+    todoPage->setModule(todoModule); // Передаємо модуль сторінці
+
+    // 3. Реєструємо сторінку в системі навігації
+    registerPage("todo", todoPage);
+
+    // 4. Додаємо кнопку в Сайдбар // Можеш вибрати іншу іконку
     // 5. НАВІГАЦІЯ (Ось тут ми спростили!)
     
     // Сайдбар
+// 6. Підключення навігації
     connect(sidebar, &Sidebar::navigationRequested, [this](const QString &id){
         if (id == "daily") {
-            openDailyPage(); // Викликаємо функцію
-        } else if (pageMap.contains(id)) {
+            openDailyPage();
+        } 
+        else if (id == "todo") {
+            // СПЕЦІАЛЬНИЙ ВИПАДОК ДЛЯ TODO
+            if (pageMap.contains("todo")) {
+                // Отримуємо вказівник на сторінку
+                ToDoPage *page = qobject_cast<ToDoPage*>(pagesStack->widget(pageMap["todo"]));
+                if (page) {
+                    page->refreshData(); // <--- ОНОВЛЮЄМО ДАНІ ПЕРЕД ПОКАЗОМ
+                }
+                pagesStack->setCurrentIndex(pageMap["todo"]);
+            }
+        }
+        else if (pageMap.contains(id)) {
             pagesStack->setCurrentIndex(pageMap[id]);
-        } else {
+        } 
+        else {
             qDebug() << "Page not found for ID:" << id;
         }
     });

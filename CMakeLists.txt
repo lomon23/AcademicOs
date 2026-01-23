@@ -39,8 +39,8 @@ set(MODULES_SOURCES
     src/modules/finance/FinanceModule.h
     src/modules/finance/FinanceFullPage.cpp
     src/modules/finance/FinanceFullPage.h
-    src/modules/finance/FinanceSmallWidget.h
     src/modules/finance/FinanceSmallWidget.cpp
+    src/modules/finance/FinanceSmallWidget.h
 
 
 
@@ -54,6 +54,13 @@ set(PAGE_SOURCES
     src/ui/page/Dashboard.h
     src/ui/page/DailyPage.cpp
     src/ui/page/DailyPage.h
+
+    src/ui/page/todo/TaskItemWidget.cpp
+    src/ui/page/todo/TaskItemWidget.h
+    src/ui/page/todo/CategoryWidget.cpp
+    src/ui/page/todo/CategoryWidget.h
+    src/ui/page/todo/ToDoPage.cpp
+    src/ui/page/todo/ToDoPage.h
 )
 set(COMPONENT_SOURCES
     src/ui/components/Sidebar.cpp

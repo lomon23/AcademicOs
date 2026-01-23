@@ -15,6 +15,7 @@ Sidebar::Sidebar(QWidget *parent) : QWidget(parent) {
     addButton("daily", "Daily Check-in", "📝");
     addButton("todo", "Todo List", "☑️");
     addButton("calendar", "Calendar", "📅");
+    
 
     mainLayout->addSpacing(15); // Відступ між секціями
 
