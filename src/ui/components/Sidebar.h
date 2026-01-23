@@ -12,26 +12,23 @@ class Sidebar : public QWidget {
 public:
     explicit Sidebar(QWidget *parent = nullptr);
 
-    // Додає звичайну кнопку (в основний список)
-    void addButton(const QString &id, const QString &text, const QString &icon);
-    
-    // НОВЕ: Додає кнопку в секцію "Analytics"
-    void addChartButton(const QString &id, const QString &text); 
+    // Для динамічних графіків (публічний)
+    void addChartButton(const QString &id, const QString &text);
 
-    // Оновлення тексту працює для всіх однаково
+    // Оновлення тексту (для перейменування графіків)
     void updateButtonText(const QString &id, const QString &newText);
 
 signals:
     void navigationRequested(const QString &pageId);
 
 private:
-    QVBoxLayout *mainLayout;      // Головний вертикальний лейаут
-    QVBoxLayout *chartsLayout;    // Лейаут СУТО для графіків
-    
+    QVBoxLayout *mainLayout;
+    QVBoxLayout *chartsLayout; // Окремий контейнер для графіків
     QMap<QString, SidebarItem*> itemsMap;
 
-    // Допоміжний метод для створення заголовків (наприклад "MAIN", "ANALYTICS")
+    // Допоміжні методи (ПРИВАТНІ, бо тільки Сайдбар вирішує, де стоять кнопки)
     void addHeader(const QString &text);
+    void createButton(const QString &id, const QString &text, const QString &icon);
 };
 
 #endif // SIDEBAR_H

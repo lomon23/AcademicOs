@@ -193,7 +193,6 @@ void MainWindow::createFinance()
     QString pageId = "wallet"; // <--- Твій ID
     
     registerPage(pageId, fullPage); // Додає в стек і в мапу
-    sidebar->addButton(pageId, "Wallet", "💳");
     
     // 3. ЛОГІКА ПЕРЕХОДУ
     // ТУТ БУЛА ПОМИЛКА: ми замінили pageIdx на pageId
