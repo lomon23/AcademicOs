@@ -1,6 +1,5 @@
 #include "ToDoPage.h"
 #include "TaskItemWidget.h"
-#include <QPushButton>
 #include <QRandomGenerator>
 #include <QMap>
 
@@ -9,41 +8,58 @@ ToDoPage::ToDoPage(QWidget *parent) : QWidget(parent) {
 }
 
 void ToDoPage::setupUI() {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    // 🔥 ГЛОБАЛЬНИЙ ЛЕЙАУТ - ГОРИЗОНТАЛЬНИЙ (Ліво | Право)
+    QHBoxLayout *globalLayout = new QHBoxLayout(this);
+    globalLayout->setContentsMargins(0, 0, 0, 0);
+    globalLayout->setSpacing(0);
+
+    // === ЛІВА ЧАСТИНА (ОСНОВНИЙ КОНТЕНТ) ===
+    QWidget *mainContent = new QWidget(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout(mainContent);
     mainLayout->setContentsMargins(20, 20, 20, 20);
     mainLayout->setSpacing(20);
 
-    // 1. HEADER
+    // 1. Header
     QLabel *title = new QLabel("Tasks", this);
     title->setStyleSheet("font-size: 28px; font-weight: bold; color: white;");
     mainLayout->addWidget(title);
 
-    // --- NEW UI: INLINE CATEGORY CREATION ---
+    // 2. Inline Category Creation + COLOR PICKER
     QWidget *topBar = new QWidget(this);
     QHBoxLayout *topLayout = new QHBoxLayout(topBar);
     topLayout->setContentsMargins(0, 0, 0, 0);
     topLayout->setSpacing(10);
 
-    // Ввід нової категорії
     QLineEdit *newCatInput = new QLineEdit(this);
     newCatInput->setPlaceholderText("New List Name...");
     newCatInput->setFixedWidth(200);
     newCatInput->setStyleSheet("background: #2D2D2D; color: white; border: 1px solid #444; border-radius: 4px; padding: 6px;");
     topLayout->addWidget(newCatInput);
 
+    // 🎨 Кнопка вибору кольору (Кружечок)
+    colorSelectorBtn = new QPushButton(this);
+    colorSelectorBtn->setFixedSize(28, 28);
+    colorSelectorBtn->setCursor(Qt::PointingHandCursor);
+    // Початковий колір
+    colorSelectorBtn->setStyleSheet(QString("background-color: %1; border-radius: 14px; border: 2px solid #444;").arg(categoryColors[0]));
+    
+    connect(colorSelectorBtn, &QPushButton::clicked, this, &ToDoPage::cycleColor);
+    topLayout->addWidget(colorSelectorBtn);
+
+    // Кнопка Add
     QPushButton *addCatBtn = new QPushButton("Add List", this);
     addCatBtn->setCursor(Qt::PointingHandCursor);
     addCatBtn->setStyleSheet("background-color: #444; color: white; border-radius: 4px; padding: 6px 12px; font-weight: bold;");
     topLayout->addWidget(addCatBtn);
 
-    // Логіка додавання категорії
+    // Логіка додавання з вибраним кольором
     connect(addCatBtn, &QPushButton::clicked, [this, newCatInput](){
         QString text = newCatInput->text().trimmed();
         if (!text.isEmpty()) {
             ToDoModule *mod = getModule();
             if (mod) {
-                QStringList colors = {"#FF5733", "#33FF57", "#3357FF", "#F033FF", "#FFFF33", "#33FFFF"};
-                QString color = colors.at(QRandomGenerator::global()->bounded(colors.size()));
+                // Беремо поточний вибраний колір
+                QString color = categoryColors[currentColorIndex];
                 mod->addCategory(text, color);
                 newCatInput->clear();
                 refreshData();
@@ -51,10 +67,10 @@ void ToDoPage::setupUI() {
         }
     });
 
-    topLayout->addStretch(); // Розділювач
+    topLayout->addStretch();
     mainLayout->addWidget(topBar);
 
-    // --- TASK INPUT AREA ---
+    // 3. Task Input
     QWidget *inputContainer = new QWidget(this);
     inputContainer->setStyleSheet("background-color: #2D2D2D; border-radius: 8px;");
     QHBoxLayout *inputLayout = new QHBoxLayout(inputContainer);
@@ -80,7 +96,7 @@ void ToDoPage::setupUI() {
 
     mainLayout->addWidget(inputContainer);
 
-    // --- SCROLL AREA ---
+    // 4. Scroll Area
     QScrollArea *scrollArea = new QScrollArea(this);
     scrollArea->setWidgetResizable(true);
     scrollArea->setFrameShape(QFrame::NoFrame);
@@ -95,23 +111,34 @@ void ToDoPage::setupUI() {
 
     scrollArea->setWidget(scrollContent);
     mainLayout->addWidget(scrollArea);
+
+    // Додаємо ліву частину в глобальний лейаут
+    globalLayout->addWidget(mainContent, 1); // 1 = Stretch factor (займає всю доступну ширину)
+
+    // === ПРАВА ЧАСТИНА (ANALYTICS) ===
+    rightBar = new ToDoRightBar(this);
+    globalLayout->addWidget(rightBar); // Додаємо справа
+}
+
+// Метод зміни кольору
+void ToDoPage::cycleColor() {
+    currentColorIndex = (currentColorIndex + 1) % categoryColors.size();
+    QString color = categoryColors[currentColorIndex];
+    colorSelectorBtn->setStyleSheet(QString("background-color: %1; border-radius: 14px; border: 2px solid #444;").arg(color));
 }
 
 void ToDoPage::refreshData() {
     ToDoModule *mod = getModule();
     if (!mod) return;
 
+    // --- Оновлення Списку Тасків (Старий код) ---
     clearLayout();
     categoryCombo->clear();
 
     QVector<ToDoCategory> categories = mod->getCategories();
-    
-    // Карта для збереження віджетів завдань, щоб потім розкласти дітей
     QMap<QString, TaskItemWidget*> taskWidgetsMap;
-    // Карта: ID категорії -> віджет категорії
     QMap<QString, CategoryWidget*> categoryWidgetsMap;
 
-    // 1. Створюємо Категорії
     for (const auto &cat : categories) {
         categoryCombo->addItem(cat.name, cat.id);
         CategoryWidget *catWidget = new CategoryWidget(cat, this);
@@ -119,61 +146,43 @@ void ToDoPage::refreshData() {
         categoriesLayout->insertWidget(categoriesLayout->count() - 1, catWidget);
     }
 
-    // 2. Створюємо ВСІ віджети завдань (поки що "в повітрі")
-    // Спочатку треба отримати всі таски з усіх категорій
-    // Але в нас API getTasksByCategory. 
-    // Окей, пройдемось по категоріях.
-    
     QVector<ToDoTask> allTasks;
     for (const auto &cat : categories) {
         allTasks.append(mod->getTasksByCategory(cat.id));
     }
 
-    // Створюємо віджети і запам'ятовуємо їх
     for (const auto &task : allTasks) {
-        // Батьківський віджет поки що this (тимчасово)
         TaskItemWidget *item = new TaskItemWidget(task, this);
-        
         connect(item, &TaskItemWidget::statusChanged, this, &ToDoPage::onTaskStatusChanged);
-        
         connect(item, &TaskItemWidget::deleteRequested, [this, mod](QString id){
             mod->deleteTask(id);
             refreshData();
         });
-
-        // 👇 ПІДКЛЮЧЕННЯ РЕДАГУВАННЯ
         connect(item, &TaskItemWidget::renameRequested, [mod](QString id, QString newTitle){
             mod->renameTask(id, newTitle);
-            // Тут refreshData() НЕ потрібен, бо віджет вже оновив свій текст візуально.
-            // Модуль просто тихо збереже це в JSON.
         });
-
-        // Перевірка на subtask button (щоб не ламалось, бо ми його можемо не створити)
         connect(item, &TaskItemWidget::addSubTaskRequested, [this, mod, task](QString parentId){
             mod->addTask("New Sub-task", task.categoryId, parentId);
             refreshData();
         });
-
         taskWidgetsMap[task.id] = item;
     }
 
-    // 3. Розкладаємо завдання по місцях (Будуємо дерево)
     for (const auto &task : allTasks) {
         TaskItemWidget *item = taskWidgetsMap[task.id];
-        
         if (!task.parentTaskId.isEmpty() && taskWidgetsMap.contains(task.parentTaskId)) {
-            // Це ДИТИНА. Шукаємо батька.
             TaskItemWidget *parentWidget = taskWidgetsMap[task.parentTaskId];
             parentWidget->addChildTask(item);
         } else {
-            // Це КОРІНЬ (або сирота). Кладемо в категорію.
             if (categoryWidgetsMap.contains(task.categoryId)) {
                 categoryWidgetsMap[task.categoryId]->addTaskWidget(item);
             }
         }
     }
-}
 
+    // --- 🔥 ОНОВЛЮЄМО СТАТИСТИКУ СПРАВА ---
+    rightBar->refreshStats(mod);
+}
 void ToDoPage::onAddTaskClicked() {
     QString text = taskInput->text().trimmed();
     if (text.isEmpty()) return;
@@ -190,7 +199,12 @@ void ToDoPage::onAddTaskClicked() {
 
 void ToDoPage::onTaskStatusChanged(QString taskId, bool isDone) {
     ToDoModule *mod = getModule();
-    if (mod) mod->toggleTask(taskId);
+    if (mod) {
+        mod->toggleTask(taskId);
+        
+        // 👇 ДОДАЙ ЦЕЙ РЯДОК
+        rightBar->refreshStats(mod); 
+    }
 }
 
 void ToDoPage::onAddCategoryClicked() {
