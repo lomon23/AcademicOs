@@ -20,6 +20,9 @@ set(CORE_SOURCES
     src/core/StorageManager.h
     src/core/MetricManager.cpp
     src/core/MetricManager.h
+    src/core/todo/Task.h
+    src/core/todo/ToDoModule.cpp
+    src/core/todo/ToDoModule.h
     
 )
 set(MODULES_SOURCES
@@ -39,7 +42,8 @@ set(MODULES_SOURCES
     src/modules/finance/FinanceSmallWidget.h
     src/modules/finance/FinanceSmallWidget.cpp
 
-    
+
+
 )
 set(UI_SOURCES
     src/ui/MainWindow.cpp
