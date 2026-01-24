@@ -1,18 +1,21 @@
 # 🎓 Academic OS
 
+![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white)
+![Qt](https://img.shields.io/badge/Qt-%23217346.svg?style=for-the-badge&logo=Qt&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
+![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
+![Repo Size](https://img.shields.io/github/repo-size/lomon23/AcademicOS?style=for-the-badge&color=orange)
+
 > **Your personal operating system for productivity, learning, and life management.**
 > *Built with C++ & Qt.*
 
 ![Dashboard Screenshot](assets/dashboard_preview.png)
-*(Note: Please update the path above with your actual screenshot)*
 
-## About The Project
+## 🚀 About The Project
 
 **Academic OS** is not just another to-do list. It is a comprehensive desktop ecosystem designed for students who want to treat their life and studies as a managed project. 
 
 Born from the need to have a fast, native, and distraction-free tool, Academic OS combines task management, financial tracking, and personal analytics into one cohesive interface.
-
-![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white) ![Qt](https://img.shields.io/badge/Qt-%23217346.svg?style=for-the-badge&logo=Qt&logoColor=white) ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black) ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
 
 ### ✨ Key Features
 
@@ -27,7 +30,7 @@ Born from the need to have a fast, native, and distraction-free tool, Academic O
 
 ---
 
-## Gallery
+## 📸 Gallery
 
 | **Task Management** | **Analytics & Progress** |
 |:---:|:---:|
@@ -36,7 +39,7 @@ Born from the need to have a fast, native, and distraction-free tool, Academic O
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 * **Core:** C++17
 * **GUI Framework:** Qt 6 (Widgets)
@@ -44,7 +47,7 @@ Born from the need to have a fast, native, and distraction-free tool, Academic O
 * **Data Storage:** JSON (Custom serialization)
 * **Charting:** QCustomPlot
 
-## Getting Started
+## 🏗️ Getting Started
 
 ### Prerequisites
 * C++ Compiler (GCC/Clang/MSVC)
@@ -55,7 +58,7 @@ Born from the need to have a fast, native, and distraction-free tool, Academic O
 
 1.  Clone the repository:
     ```bash
-    git clone [https://github.com/your-username/AcademicOS.git](https://github.com/your-username/AcademicOS.git)
+    git clone [https://github.com/lomon23/AcademicOS.git](https://github.com/lomon23/AcademicOS.git)
     cd AcademicOS
     ```
 
@@ -87,11 +90,14 @@ Born from the need to have a fast, native, and distraction-free tool, Academic O
 
 ---
 
-## 📊 GitHub Stats
+## 📊 Project Stats
 
-![Lomon's GitHub stats](https://github-readme-stats.vercel.app/api?username=lomon23&show_icons=true&theme=dark)
+[![AcademicOS Repo Card](https://github-readme-stats.vercel.app/api/pin/?username=lomon23&repo=AcademicOS&theme=dark&show_owner=true)](https://github.com/lomon23/AcademicOS)
+
+![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=lomon23&layout=compact&theme=dark&hide=cmake,html)
 
 ---
+
 ## 👤 Author
 
 **Lomon** - [GitHub Profile](https://github.com/lomon23)
