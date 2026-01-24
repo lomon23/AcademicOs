@@ -12,6 +12,8 @@
 
 Born from the need to have a fast, native, and distraction-free tool, Academic OS combines task management, financial tracking, and personal analytics into one cohesive interface.
 
+![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white) ![Qt](https://img.shields.io/badge/Qt-%23217346.svg?style=for-the-badge&logo=Qt&logoColor=white) ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black) ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
+
 ### ✨ Key Features
 
 * **📊 Dashboard Hub:** A customizable overview of your day. See your tasks, financial balance, and activity charts at a glance.
