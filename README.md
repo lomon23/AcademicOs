@@ -77,16 +77,20 @@ Born from the need to have a fast, native, and distraction-free tool, Academic O
     ```bash
     ./AcademicOS
     ```
+---
 
-## 🗺️ Roadmap
+## 🗺️ Roadmap & Status
 
-- [x] **Core Architecture** (Module System, JSON Storage)
-- [x] **ToDo Module** (CRUD, Nesting, Progress Bars)
-- [x] **Dashboard** (Widget Grid, Shortcuts)
-- [ ] **Analytics 2.0** (Link Daily Inputs to Charts)
-- [ ] **Wallet 2.0** (Transaction History)
-- [ ] **Settings Page**
-- [ ] **MacOS & Windows Deploy**
+Here is the current development status of the Academic OS modules:
+
+| Progress | Module | Status |
+| :--- | :--- | :--- |
+| ![100%](https://geps.dev/progress/100) | **Core Architecture** | ✅ **Done** (Module System & JSON Storage) |
+| ![100%](https://geps.dev/progress/100) | **ToDo Module** | ✅ **Done** (CRUD, Nesting, Categories) |
+| ![85%](https://geps.dev/progress/85) | **Dashboard** | 🛠️ **Polishing** (Widgets & Grid Layout) |
+| ![15%](https://geps.dev/progress/15) | **Analytics** | 🚧 **In Progress** (UI ready, logic pending) |
+| ![0%](https://geps.dev/progress/0) | **Wallet 2.0** | 📅 Planned |
+| ![0%](https://geps.dev/progress/0) | **Settings & Calendar**| 📅 Planned |
 
 ---
 
