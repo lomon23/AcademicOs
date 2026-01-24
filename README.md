@@ -87,6 +87,11 @@ Born from the need to have a fast, native, and distraction-free tool, Academic O
 
 ---
 
+## 📊 GitHub Stats
+
+![Lomon's GitHub stats](https://github-readme-stats.vercel.app/api?username=lomon23&show_icons=true&theme=dark)
+
+---
 ## 👤 Author
 
 **Lomon** - [GitHub Profile](https://github.com/lomon23)
