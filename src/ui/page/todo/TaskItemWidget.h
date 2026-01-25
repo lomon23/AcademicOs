@@ -3,59 +3,39 @@
 
 #include <QWidget>
 #include <QLabel>
+#include <QLineEdit>
 #include <QCheckBox>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QPushButton>
-#include <QLineEdit> // <-- Додали
-#include "../../../core/todo/Task.h"
+#include <QHBoxLayout>
+#include "../../../core/todo/ToDoModule.h" // Перевір шлях до ToDoModule
 
 class TaskItemWidget : public QWidget {
     Q_OBJECT
 
 public:
     explicit TaskItemWidget(const ToDoTask &task, QWidget *parent = nullptr);
-    void updateData(const ToDoTask &task);
-    QString getTaskId() const { return taskId; }
-
-    void addChildTask(QWidget* childWidget);
+    
+    void setIndentLevel(int level); // Щоб робити відступ для підзадач
+    void startEditing();            // Вмикає режим редагування (для нових тасок)
+    QString getTaskId() const { return m_task.id; }
+    QString getParentId() const { return m_task.parentTaskId; }
 
 signals:
-    void statusChanged(QString taskId, bool isDone);
-    void deleteRequested(QString taskId);
-    void addSubTaskRequested(QString parentTaskId);
-    
-    // 👇 Сигнал про зміну назви
-    void renameRequested(QString taskId, QString newTitle); 
-
-private slots:
-    void onCheckboxClicked(int state);
-    void onEditClicked(); // Клік на олівець
-    void onSaveClicked(); // Збереження редагування
+    void statusChanged(QString id, bool isDone);
+    void textChanged(QString id, QString newTitle);
+    void deleteRequested(QString id);
+    void addSubTaskRequested(QString parentId);
 
 private:
-    QString taskId;
+    ToDoTask m_task;
+    
+    // UI Elements
     QCheckBox *checkBox;
-    
-    // UI для перегляду
     QLabel *titleLabel;
-    
-    // UI для редагування
     QLineEdit *titleEdit;
-    
-    // Кнопки
-    QPushButton *editBtn;
-    QPushButton *deleteBtn;
     QPushButton *addSubTaskBtn;
-
-    QVBoxLayout *mainLayout; 
-    QWidget *childrenContainer; 
-    QVBoxLayout *childrenLayout;
-
-    bool isEditMode = false; // Стан віджета
-
-    void updateTextStyle(bool isDone);
-    void toggleEditMode(bool enable); // Перемикач
+    QPushButton *deleteBtn;
+    QHBoxLayout *mainLayout;
 };
 
 #endif // TASKITEMWIDGET_H

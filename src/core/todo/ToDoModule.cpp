@@ -14,9 +14,44 @@ void ToDoModule::addCategory(const QString& name, const QString& color) {
     save();
 }
 
-void ToDoModule::addTask(const QString& title, const QString& categoryId, const QString& parentTaskId) {
-    tasks.append(ToDoTask(title, categoryId, parentTaskId));
+QString ToDoModule::addTask(const QString& title, const QString& categoryId, const QString& parentTaskId) {
+    ToDoTask newTask;
+    newTask.id = QUuid::createUuid().toString();
+    newTask.title = title;
+    newTask.categoryId = categoryId;
+    newTask.parentTaskId = parentTaskId;
+    newTask.isDone = false;
+
+
+    // 🔥 ЛОГІКА СОРТУВАННЯ
+    if (parentTaskId.isEmpty()) {
+        // ВАРІАНТ 1: Це батьківська таска -> кидаємо на самий верх
+        tasks.prepend(newTask);
+    } 
+    else {
+        // ВАРІАНТ 2: Це підзадача -> шукаємо батька і вставляємо ПІД ним
+        int parentIndex = -1;
+        
+        for (int i = 0; i < tasks.size(); ++i) {
+            if (tasks[i].id == parentTaskId) {
+                parentIndex = i;
+                break;
+            }
+        }
+
+        if (parentIndex != -1) {
+            // Вставляємо одразу після батька (Parent Index + 1)
+            // Це поставить нову підзадачу вище за старих дітей, 
+            // але нижче самого батька. Ідеально.
+            tasks.insert(parentIndex + 1, newTask);
+        } else {
+            // Якщо батька не знайдено (баг?), кидаємо просто вверх
+            tasks.prepend(newTask);
+        }
+    }
+
     save();
+    return newTask.id;
 }
 
 void ToDoModule::deleteTask(const QString& taskId) {

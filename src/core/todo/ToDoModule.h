@@ -23,7 +23,7 @@ public:
 
     // --- CRUD ---
     void addCategory(const QString& name, const QString& color);
-    void addTask(const QString& title, const QString& categoryId, const QString& parentTaskId = "");
+    QString addTask(const QString& title, const QString& categoryId, const QString& parentTaskId = "");
     void toggleTask(const QString& taskId);
     void deleteTask(const QString& taskId);
 
