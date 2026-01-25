@@ -3,33 +3,38 @@
 
 #include <QWidget>
 #include <QVBoxLayout>
-#include <QPushButton>
 #include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
 #include "../../../core/todo/ToDoModule.h"
-#include "TaskItemWidget.h" // Включаємо атом
 
 class ToDoListWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ToDoListWidget(const ToDoCategory &cat, QWidget *parent = nullptr);
-    
-    void addTaskWidget(TaskItemWidget *widget); // Додати готову таску
-    void clear(); // Очистити перед рендером
-    QString getCategoryId() const { return m_cat.id; }
+    // Додаємо module, щоб можна було зберігати зміни
+    explicit ToDoListWidget(ToDoModule* module, const ToDoCategory &category, QWidget *parent = nullptr);
+
+    void addTaskWidget(QWidget *w);
 
 signals:
-    void addTaskRequested(QString catId); // Клік по "+" біля назви списку
+    void addTaskRequested(QString categoryId);
+    void categoryChanged(); // Сигнал, щоб ToDoPage оновив таби
+    void deleteCategoryRequested(QString categoryId); // Сигнал на видалення
 
 private:
+    ToDoModule* m_module;
     ToDoCategory m_cat;
-    bool isExpanded = true;
-
-    // UI
-    QVBoxLayout *tasksLayout;
-    QWidget *tasksContainer;
-    QPushButton *toggleBtn;
-    QPushButton *addBtn;
+    
+    QVBoxLayout *mainLayout;
+    QVBoxLayout *tasksLayout; // Сюди падають таски
+    
+    // Елементи хедера
+    QPushButton *colorBtn;
+    QLineEdit *titleEdit;
+    
+    void setupHeader();
+    void cycleColor();
 };
 
 #endif // TODOLISTWIDGET_H

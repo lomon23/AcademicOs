@@ -7,7 +7,7 @@ TaskItemWidget::TaskItemWidget(const ToDoTask &task, QWidget *parent)
     mainLayout = new QHBoxLayout(this);
     mainLayout->setContentsMargins(5, 2, 5, 2);
     mainLayout->setSpacing(10);
-
+    this->setObjectName("TaskItem");
     // 1. Checkbox
     checkBox = new QCheckBox(this);
     checkBox->setChecked(task.isDone);

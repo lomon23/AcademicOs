@@ -57,6 +57,9 @@ public:
     void toggleTask(const QString& taskId);
     void deleteTask(const QString& taskId);
     void renameTask(const QString& taskId, const QString& newTitle);
+
+    void deleteCategory(const QString& catId);
+    void updateCategory(const QString& catId, const QString& newName, const QString& newColor);
     
     // Getters
     QVector<ToDoCategory> getCategories() const { return categories; }

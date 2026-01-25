@@ -28,21 +28,24 @@ private slots:
     void onAddNewList();
 
 private:
+    ToDoRightBar *rightBar;          // <--- Має бути тут
+
+    
     ToDoModule *module = nullptr;
     QString currentTabId = "all";
-    QString taskToFocusId = ""; // ID нової таски для автофокусу
+    QString taskToFocusId = "";
 
     // UI Elements
     QHBoxLayout *tabsLayout;
     QVBoxLayout *contentLayout;
 
-    ToDoRightBar *rightBar;
 
     // Render Logic
     void setupUI();
     void renderTabs();
     void renderContent();
     void clearLayout(QLayout *layout);
+    void loadStyles();
 };
 
 #endif // TODOPAGE_H

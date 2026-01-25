@@ -215,3 +215,37 @@ void ToDoModule::cyclePriority(const QString& taskId) {
         }
     }
 }
+
+void ToDoModule::deleteCategory(const QString& catId) {
+    // 1. Видаляємо саму категорію
+    for (int i = 0; i < categories.size(); ++i) {
+        if (categories[i].id == catId) {
+            categories.removeAt(i);
+            break;
+        }
+    }
+    
+    // 2. Видаляємо ВСІ таски цієї категорії (каскадне видалення)
+    // Використовуємо removeIf (C++20 style) або класичний цикл
+    auto it = tasks.begin();
+    while (it != tasks.end()) {
+        if (it->categoryId == catId) {
+            it = tasks.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    save();
+}
+
+void ToDoModule::updateCategory(const QString& catId, const QString& newName, const QString& newColor) {
+    for (auto& cat : categories) {
+        if (cat.id == catId) {
+            cat.name = newName;
+            cat.color = newColor;
+            save();
+            return;
+        }
+    }
+}
