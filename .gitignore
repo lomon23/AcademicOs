@@ -36,3 +36,11 @@ Thumbs.db
 *.db
 *.sqlite
 *.log
+
+# Ігнорувати всі файли Python у статистиці
+*.py linguist-detectable=false
+
+# Або ігнорувати конкретні папки (якщо ти закомітив venv чи build)
+venv/* linguist-vendored
+build/* linguist-vendored
+cmake-build-debug/* linguist-vendored
