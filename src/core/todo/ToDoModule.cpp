@@ -3,6 +3,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QDebug>
+#include <QUuid>
 
 ToDoModule::ToDoModule(QObject *parent) : Module(parent) {
     setTitle("Tasks");
@@ -10,7 +11,20 @@ ToDoModule::ToDoModule(QObject *parent) : Module(parent) {
 }
 
 void ToDoModule::addCategory(const QString& name, const QString& color) {
-    categories.append(ToDoCategory(name, color));
+    ToDoCategory newCat;
+    
+    // 1. Генеруємо ID (обов'язково!)
+    newCat.id = QUuid::createUuid().toString(); 
+    
+    // 2. Заповнюємо дані
+    newCat.name = name;
+    newCat.color = color;
+    newCat.isExpanded = true; // Розгорнута за замовчуванням
+
+    // 3. Додаємо в список
+    categories.append(newCat);
+    
+    // 4. Зберігаємо
     save();
 }
 
@@ -119,9 +133,13 @@ void ToDoModule::save() {
         obj["title"] = t.title;
         obj["isDone"] = t.isDone;
         obj["categoryId"] = t.categoryId;
-        obj["parentTaskId"] = t.parentTaskId; // <--- Зберігаємо батька
+        obj["parentTaskId"] = t.parentTaskId;
         obj["isRecurring"] = t.isRecurring;
         obj["date"] = t.createdDate.toString(Qt::ISODate);
+        
+        // 🔥 ВИПРАВЛЕНО: Тепер це всередині циклу
+        obj["priority"] = t.priority; 
+
         taskArray.append(obj);
     }
     root["tasks"] = taskArray;
@@ -149,7 +167,7 @@ void ToDoModule::load() {
         c.isExpanded = obj["isExpanded"].toBool(true);
         categories.append(c);
     }
-
+    
     tasks.clear();
     QJsonArray taskArray = root["tasks"].toArray();
     for (const auto &val : taskArray) {
@@ -159,10 +177,13 @@ void ToDoModule::load() {
         t.title = obj["title"].toString();
         t.isDone = obj["isDone"].toBool();
         t.categoryId = obj["categoryId"].toString();
-        t.parentTaskId = obj["parentTaskId"].toString(); // <--- Завантажуємо батька
+        t.parentTaskId = obj["parentTaskId"].toString();
         t.isRecurring = obj["isRecurring"].toBool();
         t.createdDate = QDate::fromString(obj["date"].toString(), Qt::ISODate);
         
+        // 🔥 ВИПРАВЛЕНО: Тепер це всередині циклу і ПЕРЕД додаванням у список
+        t.priority = obj["priority"].toInt(0);
+
         if (t.isRecurring && t.createdDate != QDate::currentDate()) {
             t.isDone = false; 
             t.createdDate = QDate::currentDate();
@@ -180,6 +201,17 @@ void ToDoModule::renameTask(const QString& taskId, const QString& newTitle) {
             task.title = newTitle;
             save(); // Зберігаємо в JSON
             break;
+        }
+    }
+}
+
+void ToDoModule::cyclePriority(const QString& taskId) {
+    for (auto& task : tasks) {
+        if (task.id == taskId) {
+            // Математика: (0+1)%4 = 1 ... (3+1)%4 = 0
+            task.priority = (task.priority + 1) % 4;
+            save(); // Миттєве збереження
+            return;
         }
     }
 }

@@ -25,6 +25,7 @@ signals:
     void textChanged(QString id, QString newTitle);
     void deleteRequested(QString id);
     void addSubTaskRequested(QString parentId);
+    void priorityChangeRequested(QString id);
 
 private:
     ToDoTask m_task;
@@ -33,9 +34,11 @@ private:
     QCheckBox *checkBox;
     QLabel *titleLabel;
     QLineEdit *titleEdit;
+    QPushButton *editBtn;
     QPushButton *addSubTaskBtn;
     QPushButton *deleteBtn;
     QHBoxLayout *mainLayout;
+    QPushButton *priorityStrip;
 };
 
 #endif // TASKITEMWIDGET_H
