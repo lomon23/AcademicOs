@@ -1,230 +1,313 @@
 #include "ToDoPage.h"
-#include "TaskItemWidget.h"
-#include <QRandomGenerator>
-#include <QMap>
+#include <QLabel>
+#include <QInputDialog>
+#include <algorithm> 
+#include <QTimer>
+#include <QFile>
+#include <QDebug>
 
+// --- КОНСТРУКТОР ---
 ToDoPage::ToDoPage(QWidget *parent) : QWidget(parent) {
+    // 1. Спочатку створюємо модуль даних
+    module = new ToDoModule(this);
+    module->load(); 
+
+    // 2. Будуємо Інтерфейс (вже з модулем)
     setupUI();
+    
+    // 3. Вантажимо стилі
+    loadStyles();
+
+    // 4. Перший рендер (щоб не було пустого екрану)
+    currentTabId = "all"; 
+    refreshData(); 
 }
 
+// --- SETUP UI (Виправлений) ---
 void ToDoPage::setupUI() {
-    // 🔥 ГЛОБАЛЬНИЙ ЛЕЙАУТ - ГОРИЗОНТАЛЬНИЙ (Ліво | Право)
-    QHBoxLayout *globalLayout = new QHBoxLayout(this);
-    globalLayout->setContentsMargins(0, 0, 0, 0);
-    globalLayout->setSpacing(0);
+    // 1. Root Layout (Весь екран: Ліва частина + Сайдбар)
+    QHBoxLayout *rootLayout = new QHBoxLayout(this);
+    rootLayout->setContentsMargins(0, 0, 0, 0);
+    rootLayout->setSpacing(0); // Склеюємо Main і RightBar (Strict Style)
 
-    // === ЛІВА ЧАСТИНА (ОСНОВНИЙ КОНТЕНТ) ===
-    QWidget *mainContent = new QWidget(this);
-    QVBoxLayout *mainLayout = new QVBoxLayout(mainContent);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
-    mainLayout->setSpacing(20);
-
-    // 1. Header
-    QLabel *title = new QLabel("Tasks", this);
-    title->setStyleSheet("font-size: 28px; font-weight: bold; color: white;");
-    mainLayout->addWidget(title);
-
-    // 2. Inline Category Creation + COLOR PICKER
-    QWidget *topBar = new QWidget(this);
-    QHBoxLayout *topLayout = new QHBoxLayout(topBar);
-    topLayout->setContentsMargins(0, 0, 0, 0);
-    topLayout->setSpacing(10);
-
-    QLineEdit *newCatInput = new QLineEdit(this);
-    newCatInput->setPlaceholderText("New List Name...");
-    newCatInput->setFixedWidth(200);
-    newCatInput->setStyleSheet("background: #2D2D2D; color: white; border: 1px solid #444; border-radius: 4px; padding: 6px;");
-    topLayout->addWidget(newCatInput);
-
-    // 🎨 Кнопка вибору кольору (Кружечок)
-    colorSelectorBtn = new QPushButton(this);
-    colorSelectorBtn->setFixedSize(28, 28);
-    colorSelectorBtn->setCursor(Qt::PointingHandCursor);
-    // Початковий колір
-    colorSelectorBtn->setStyleSheet(QString("background-color: %1; border-radius: 14px; border: 2px solid #444;").arg(categoryColors[0]));
+    // === ЛІВА ЧАСТИНА (MAIN CONTAINER) ===
+    QWidget *mainContainer = new QWidget(this);
+    mainContainer->setObjectName("PageBackground"); // Чорний фон
+    QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);
     
-    connect(colorSelectorBtn, &QPushButton::clicked, this, &ToDoPage::cycleColor);
-    topLayout->addWidget(colorSelectorBtn);
+    // 🔥 НІЯКИХ ВІДСТУПІВ - Хедер на всю ширину
+    mainLayout->setContentsMargins(0, 0, 0, 0); 
+    mainLayout->setSpacing(0); // 🔥 СКЛЕЮЄМО Хедер, Таби і Контент
 
-    // Кнопка Add
-    QPushButton *addCatBtn = new QPushButton("Add List", this);
-    addCatBtn->setCursor(Qt::PointingHandCursor);
-    addCatBtn->setStyleSheet("background-color: #444; color: white; border-radius: 4px; padding: 6px 12px; font-weight: bold;");
-    topLayout->addWidget(addCatBtn);
+    // --- БЛОК 1: HEADER (Заголовок "My Tasks") ---
+    QWidget *headerBlock = new QWidget(this);
+    headerBlock->setObjectName("HeaderBlock");
+    QHBoxLayout *headerLayout = new QHBoxLayout(headerBlock);
+    
+    // 🔥 ЗМІНА ТУТ: (Зліва, Зверху, Справа, Знизу)
+    // 60px зверху — це те, що робить дизайн "чистим"
+    headerLayout->setContentsMargins(40, 60, 40, 10); 
+    
+    QLabel *title = new QLabel(tr("My Tasks"), this);
+    title->setObjectName("PageTitle");
+    headerLayout->addWidget(title);
+    
+    mainLayout->addWidget(headerBlock);
 
-    // Логіка додавання з вибраним кольором
-    connect(addCatBtn, &QPushButton::clicked, [this, newCatInput](){
-        QString text = newCatInput->text().trimmed();
-        if (!text.isEmpty()) {
-            ToDoModule *mod = getModule();
-            if (mod) {
-                // Беремо поточний вибраний колір
-                QString color = categoryColors[currentColorIndex];
-                mod->addCategory(text, color);
-                newCatInput->clear();
-                refreshData();
-            }
-        }
-    });
+    // --- БЛОК 2: TABS (Приклеєні до Хедера) ---
+    QWidget *tabsWidget = new QWidget(this);
+    tabsWidget->setObjectName("TabsBlock");
+    tabsLayout = new QHBoxLayout(tabsWidget);
+    tabsLayout->setContentsMargins(40, 0, 40, 0); // Вирівняно по хедеру
+    tabsLayout->setSpacing(5); 
+    tabsLayout->setAlignment(Qt::AlignLeft);
+    
+    mainLayout->addWidget(tabsWidget);
 
-    topLayout->addStretch();
-    mainLayout->addWidget(topBar);
-
-    // 3. Task Input
-    QWidget *inputContainer = new QWidget(this);
-    inputContainer->setStyleSheet("background-color: #2D2D2D; border-radius: 8px;");
-    QHBoxLayout *inputLayout = new QHBoxLayout(inputContainer);
-    inputLayout->setContentsMargins(10, 10, 10, 10);
-
-    taskInput = new QLineEdit(this);
-    taskInput->setPlaceholderText("What needs to be done?");
-    taskInput->setStyleSheet("border: none; color: white; font-size: 16px; background: transparent;");
-    inputLayout->addWidget(taskInput, 1);
-
-    categoryCombo = new QComboBox(this);
-    categoryCombo->setFixedWidth(150);
-    categoryCombo->setStyleSheet("background: #1E1E1E; color: white; border: 1px solid #444; border-radius: 4px; padding: 4px;");
-    inputLayout->addWidget(categoryCombo);
-
-    QPushButton *addTaskBtn = new QPushButton("+", this);
-    addTaskBtn->setFixedSize(32, 32);
-    addTaskBtn->setCursor(Qt::PointingHandCursor);
-    addTaskBtn->setStyleSheet("background-color: #00E676; color: black; font-weight: bold; border-radius: 16px; border: none;");
-    connect(addTaskBtn, &QPushButton::clicked, this, &ToDoPage::onAddTaskClicked);
-    connect(taskInput, &QLineEdit::returnPressed, this, &ToDoPage::onAddTaskClicked);
-    inputLayout->addWidget(addTaskBtn);
-
-    mainLayout->addWidget(inputContainer);
-
-    // 4. Scroll Area
-    QScrollArea *scrollArea = new QScrollArea(this);
-    scrollArea->setWidgetResizable(true);
-    scrollArea->setFrameShape(QFrame::NoFrame);
-    scrollArea->setStyleSheet("background: transparent; border: none;");
+    // --- БЛОК 3: CONTENT (Список завдань) ---
+    QScrollArea *scroll = new QScrollArea(this);
+    scroll->setObjectName("ContentBlock");
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    
+    // 🔥 ГОЛОВНИЙ ФІКС БІЛОГО ФОНУ
+    // Робимо скролл прозорим, щоб просвічувався наш темний фон
+    scroll->setStyleSheet("background: transparent; border: none;"); 
+    scroll->viewport()->setStyleSheet("background: transparent;"); 
 
     QWidget *scrollContent = new QWidget();
-    scrollContent->setStyleSheet("background: transparent;");
-    categoriesLayout = new QVBoxLayout(scrollContent);
-    categoriesLayout->setContentsMargins(0, 0, 0, 0);
-    categoriesLayout->setSpacing(15);
-    categoriesLayout->addStretch();
+    scrollContent->setObjectName("TransparentContent");
+    
+    // 🔥 ОСЬ ТУТ БУЛА ПОМИЛКА: Ми створюємо Layout ПЕРЕД використанням
+    contentLayout = new QVBoxLayout(scrollContent); 
+    
+    // Налаштування контенту
+    contentLayout->setContentsMargins(30, 20, 30, 20); // Відступи, щоб таски не липли до країв
+    contentLayout->setSpacing(15);
+    contentLayout->setAlignment(Qt::AlignTop); 
 
-    scrollArea->setWidget(scrollContent);
-    mainLayout->addWidget(scrollArea);
+    scroll->setWidget(scrollContent);
+    mainLayout->addWidget(scroll);
 
-    // Додаємо ліву частину в глобальний лейаут
-    globalLayout->addWidget(mainContent, 1); // 1 = Stretch factor (займає всю доступну ширину)
+    // Додаємо ліву частину в головний
+    rootLayout->addWidget(mainContainer, 1);
 
-    // === ПРАВА ЧАСТИНА (ANALYTICS) ===
+    // === ПРАВА ЧАСТИНА (RIGHT BAR) ===
     rightBar = new ToDoRightBar(this);
-    globalLayout->addWidget(rightBar); // Додаємо справа
-}
-
-// Метод зміни кольору
-void ToDoPage::cycleColor() {
-    currentColorIndex = (currentColorIndex + 1) % categoryColors.size();
-    QString color = categoryColors[currentColorIndex];
-    colorSelectorBtn->setStyleSheet(QString("background-color: %1; border-radius: 14px; border: 2px solid #444;").arg(color));
+    rootLayout->addWidget(rightBar);
 }
 
 void ToDoPage::refreshData() {
-    ToDoModule *mod = getModule();
-    if (!mod) return;
+    if (!module) return;
+    renderTabs();
+    renderContent();
+    rightBar->refreshStats(module);
+}
 
-    // --- Оновлення Списку Тасків (Старий код) ---
-    clearLayout();
-    categoryCombo->clear();
+void ToDoPage::renderTabs() {
+    clearLayout(tabsLayout);
 
-    QVector<ToDoCategory> categories = mod->getCategories();
-    QMap<QString, TaskItemWidget*> taskWidgetsMap;
-    QMap<QString, CategoryWidget*> categoryWidgetsMap;
+    QString tabStyle = "QPushButton { color: #888; border: none; font-weight: bold; font-size: 14px; padding: 5px; margin-right: 10px; }"
+                       "QPushButton:checked { color: white; border-bottom: 2px solid #00E676; }";
 
-    for (const auto &cat : categories) {
-        categoryCombo->addItem(cat.name, cat.id);
-        CategoryWidget *catWidget = new CategoryWidget(cat, this);
-        categoryWidgetsMap[cat.id] = catWidget;
-        categoriesLayout->insertWidget(categoriesLayout->count() - 1, catWidget);
+    auto createBtn = [&](QString text, QString id) {
+        QPushButton *btn = new QPushButton(text, this);
+        btn->setObjectName("TabButton");
+        btn->setCheckable(true);
+        btn->setChecked(currentTabId == id);
+        btn->setCursor(Qt::PointingHandCursor);
+        btn->setStyleSheet(tabStyle);
+        connect(btn, &QPushButton::clicked, [this, id](){ 
+            currentTabId = id; // Оновлюємо ID
+            refreshData();     // Перемальовуємо
+        });
+        tabsLayout->addWidget(btn);
+    };
+
+    createBtn(tr("All"), "all");
+    
+    for (const auto &cat : module->getCategories()) {
+        createBtn(cat.name, cat.id);
     }
 
-    QVector<ToDoTask> allTasks;
-    for (const auto &cat : categories) {
-        allTasks.append(mod->getTasksByCategory(cat.id));
+    // New List Button (+)
+    QPushButton *newBtn = new QPushButton("+", this);
+    newBtn->setFixedSize(24, 24);
+    newBtn->setCursor(Qt::PointingHandCursor);
+    newBtn->setStyleSheet("background: #333; color: white; border-radius: 4px; border: none;");
+    
+    // 🔥 ЛОГІКА СТВОРЕННЯ СПИСКУ ТУТ
+    connect(newBtn, &QPushButton::clicked, [this](){
+        module->addCategory("New List", "#BD93F9"); // Створити
+        
+        auto cats = module->getCategories();
+        if (!cats.isEmpty()) {
+            currentTabId = cats.last().id; // Переключитись на новий
+            refreshData(); 
+        }
+    });
+    
+    tabsLayout->addWidget(newBtn);
+}
+
+void ToDoPage::renderContent() {
+    clearLayout(contentLayout);
+    if (!module) return;
+
+    // 1. ОТРИМАННЯ ДАНИХ
+    QVector<ToDoTask> tasks;
+    if (currentTabId == "all") {
+        for (const auto &cat : module->getCategories()) {
+            tasks.append(module->getTasksByCategory(cat.id));
+        }
+    } else {
+        tasks = module->getTasksByCategory(currentTabId);
     }
 
-    for (const auto &task : allTasks) {
-        TaskItemWidget *item = new TaskItemWidget(task, this);
-        connect(item, &TaskItemWidget::statusChanged, this, &ToDoPage::onTaskStatusChanged);
-        connect(item, &TaskItemWidget::deleteRequested, [this, mod](QString id){
-            mod->deleteTask(id);
-            refreshData();
-        });
-        connect(item, &TaskItemWidget::renameRequested, [mod](QString id, QString newTitle){
-            mod->renameTask(id, newTitle);
-        });
-        connect(item, &TaskItemWidget::addSubTaskRequested, [this, mod, task](QString parentId){
-            mod->addTask("New Sub-task", task.categoryId, parentId);
-            refreshData();
-        });
-        taskWidgetsMap[task.id] = item;
-    }
+    // 2. СТВОРЕННЯ КОНТЕЙНЕРІВ (Lists)
+    QMap<QString, TaskItemWidget*> taskWidgets;
+    QMap<QString, ToDoListWidget*> listWidgets;
 
-    for (const auto &task : allTasks) {
-        TaskItemWidget *item = taskWidgetsMap[task.id];
-        if (!task.parentTaskId.isEmpty() && taskWidgetsMap.contains(task.parentTaskId)) {
-            TaskItemWidget *parentWidget = taskWidgetsMap[task.parentTaskId];
-            parentWidget->addChildTask(item);
-        } else {
-            if (categoryWidgetsMap.contains(task.categoryId)) {
-                categoryWidgetsMap[task.categoryId]->addTaskWidget(item);
-            }
+    // A. РЕЖИМ ALL
+    if (currentTabId == "all") {
+        for (const auto &cat : module->getCategories()) {
+            // 🔥 ВИПРАВЛЕНО: Додали 'module' першим аргументом
+            ToDoListWidget *lw = new ToDoListWidget(module, cat, this);
+            
+            connect(lw, &ToDoListWidget::addTaskRequested, [this](QString cid){
+                if (currentTabId != cid) currentTabId = cid; 
+                taskToFocusId = module->addTask("", cid, ""); 
+                refreshData(); 
+            });
+            
+            // В режимі ALL нам не обов'язково слухати перейменування категорій,
+            // але можна додати, якщо хочеш.
+
+            contentLayout->addWidget(lw);
+            listWidgets[cat.id] = lw;
+        }
+    }
+    // B. РЕЖИМ TAB
+    else {
+        ToDoCategory currentCat;
+        bool found = false;
+        for (const auto &c : module->getCategories()) {
+            if (c.id == currentTabId) { currentCat = c; found = true; break; }
+        }
+
+        if (found) {
+            // Тут у тебе все було правильно
+            ToDoListWidget *lw = new ToDoListWidget(module, currentCat, this);
+            
+            connect(lw, &ToDoListWidget::categoryChanged, this, [this](){
+                refreshData(); 
+            });
+
+            connect(lw, &ToDoListWidget::deleteCategoryRequested, this, [this](QString catId){
+                module->deleteCategory(catId);
+                currentTabId = "all"; 
+                refreshData();
+            });
+            
+            connect(lw, &ToDoListWidget::addTaskRequested, [this](QString cid){
+                taskToFocusId = module->addTask("", cid, ""); 
+                refreshData();
+            });
+            
+            contentLayout->addWidget(lw);
+            listWidgets[currentCat.id] = lw;
         }
     }
 
-    // --- 🔥 ОНОВЛЮЄМО СТАТИСТИКУ СПРАВА ---
-    rightBar->refreshStats(mod);
-}
-void ToDoPage::onAddTaskClicked() {
-    QString text = taskInput->text().trimmed();
-    if (text.isEmpty()) return;
+    // 3. СТВОРЕННЯ ТАСОК
+    for (const auto &task : tasks) {
+        TaskItemWidget *w = new TaskItemWidget(task, this);
+        
+        connect(w, &TaskItemWidget::statusChanged, this, [this](QString id, bool done){
+            module->toggleTask(id); refreshData();
+        }, Qt::QueuedConnection);
 
-    ToDoModule *mod = getModule();
-    if (mod) {
-        QString catId = categoryCombo->currentData().toString();
-        // Додаємо звичайне завдання (без батька)
-        mod->addTask(text, catId, ""); 
-        taskInput->clear();
+        connect(w, &TaskItemWidget::textChanged, [this](QString id, QString txt){
+            module->renameTask(id, txt);
+        });
+
+        connect(w, &TaskItemWidget::deleteRequested, this, [this](QString id){
+            module->deleteTask(id); refreshData();
+        }, Qt::QueuedConnection);
+
+        connect(w, &TaskItemWidget::addSubTaskRequested, this, [this, task](QString pid){
+             taskToFocusId = module->addTask("", task.categoryId, pid);
+             refreshData();
+        }, Qt::QueuedConnection);
+
+
+        // 👇 ПІДКЛЮЧАЄМО ПРІОРИТЕТ
+        connect(w, &TaskItemWidget::priorityChangeRequested, this, [this](QString id){
+            module->cyclePriority(id); // Міняємо в базі (0->1->2...)
+            refreshData();             // Перемальовуємо (щоб колір оновився)
+        }, Qt::QueuedConnection);
+
+        // 👇 АВТОФОКУС: Якщо це та таска, яку ми щойно створили
+        if (task.id == taskToFocusId) {
+            // Використовуємо Timer, щоб віджет встиг з'явитись на екрані перед тим, як ми дамо йому фокус
+            QTimer::singleShot(0, w, &TaskItemWidget::startEditing);
+            taskToFocusId = ""; 
+        }
+
+        taskWidgets[task.id] = w;
+    }
+
+    // 4. ЛІНКУВАННЯ
+    for (const auto &task : tasks) {
+        if (!taskWidgets.contains(task.id)) continue;
+        TaskItemWidget *widget = taskWidgets[task.id];
+        QString pid = task.parentTaskId;
+
+        if (!pid.isEmpty() && taskWidgets.contains(pid)) {
+            widget->setIndentLevel(1); 
+        } 
+        
+        if (listWidgets.contains(task.categoryId)) {
+            listWidgets[task.categoryId]->addTaskWidget(widget);
+        }
+    }
+    
+    contentLayout->addStretch();
+}
+
+void ToDoPage::onTabSwitch(QString id) {
+    if (currentTabId == id) return;
+    currentTabId = id;
+    refreshData();
+}
+
+
+void ToDoPage::onAddNewList() {
+    bool ok;
+    QString name = QInputDialog::getText(this, tr("New List"), tr("Name:"), QLineEdit::Normal, "", &ok);
+    if (ok && !name.isEmpty() && module) {
+        module->addCategory(name, "#FFFFFF"); // Randomize color later
         refreshData();
     }
 }
 
-void ToDoPage::onTaskStatusChanged(QString taskId, bool isDone) {
-    ToDoModule *mod = getModule();
-    if (mod) {
-        mod->toggleTask(taskId);
-        
-        // 👇 ДОДАЙ ЦЕЙ РЯДОК
-        rightBar->refreshStats(mod); 
+void ToDoPage::clearLayout(QLayout *layout) {
+    if (!layout) return;
+    QLayoutItem *item;
+    while ((item = layout->takeAt(0))) {
+        if (item->widget()) delete item->widget();
+        delete item;
     }
 }
-
-void ToDoPage::onAddCategoryClicked() {
-    // Цей слот тепер не використовується в новій логіці,
-    // але можна лишити для сумісності або видалити з хедеру.
-}
-
-ToDoModule* ToDoPage::getModule() {
-    return todoModule;
-}
-
-void ToDoPage::clearLayout() {
-    QLayoutItem *item;
-    // Ми залишаємо останній елемент (> 1), тому що це "пружина" (addStretch),
-    // яка тримає все зверху. Ми не хочемо її видаляти.
-    while (categoriesLayout->count() > 1) {
-        item = categoriesLayout->takeAt(0);
-        if (item->widget()) {
-            delete item->widget();
-        }
-        delete item;
+void ToDoPage::loadStyles() {
+    // Шлях відносно папки build (де лежить .exe)
+    QFile file("resources/todo.qss"); 
+    
+    if (file.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(file.readAll());
+        this->setStyleSheet(styleSheet);
+        file.close();
+    } else {
+        qDebug() << "Warning: Could not load styles/todo.qss";
     }
 }

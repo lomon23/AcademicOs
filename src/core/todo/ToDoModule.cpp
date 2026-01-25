@@ -3,8 +3,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QDebug>
-
-#include "../../ui/page/todo/ToDoSmallWidget.h"
+#include <QUuid>
 
 ToDoModule::ToDoModule(QObject *parent) : Module(parent) {
     setTitle("Tasks");
@@ -12,13 +11,61 @@ ToDoModule::ToDoModule(QObject *parent) : Module(parent) {
 }
 
 void ToDoModule::addCategory(const QString& name, const QString& color) {
-    categories.append(ToDoCategory(name, color));
+    ToDoCategory newCat;
+    
+    // 1. Генеруємо ID (обов'язково!)
+    newCat.id = QUuid::createUuid().toString(); 
+    
+    // 2. Заповнюємо дані
+    newCat.name = name;
+    newCat.color = color;
+    newCat.isExpanded = true; // Розгорнута за замовчуванням
+
+    // 3. Додаємо в список
+    categories.append(newCat);
+    
+    // 4. Зберігаємо
     save();
 }
 
-void ToDoModule::addTask(const QString& title, const QString& categoryId, const QString& parentTaskId) {
-    tasks.append(ToDoTask(title, categoryId, parentTaskId));
+QString ToDoModule::addTask(const QString& title, const QString& categoryId, const QString& parentTaskId) {
+    ToDoTask newTask;
+    newTask.id = QUuid::createUuid().toString();
+    newTask.title = title;
+    newTask.categoryId = categoryId;
+    newTask.parentTaskId = parentTaskId;
+    newTask.isDone = false;
+
+
+    // 🔥 ЛОГІКА СОРТУВАННЯ
+    if (parentTaskId.isEmpty()) {
+        // ВАРІАНТ 1: Це батьківська таска -> кидаємо на самий верх
+        tasks.prepend(newTask);
+    } 
+    else {
+        // ВАРІАНТ 2: Це підзадача -> шукаємо батька і вставляємо ПІД ним
+        int parentIndex = -1;
+        
+        for (int i = 0; i < tasks.size(); ++i) {
+            if (tasks[i].id == parentTaskId) {
+                parentIndex = i;
+                break;
+            }
+        }
+
+        if (parentIndex != -1) {
+            // Вставляємо одразу після батька (Parent Index + 1)
+            // Це поставить нову підзадачу вище за старих дітей, 
+            // але нижче самого батька. Ідеально.
+            tasks.insert(parentIndex + 1, newTask);
+        } else {
+            // Якщо батька не знайдено (баг?), кидаємо просто вверх
+            tasks.prepend(newTask);
+        }
+    }
+
     save();
+    return newTask.id;
 }
 
 void ToDoModule::deleteTask(const QString& taskId) {
@@ -86,9 +133,13 @@ void ToDoModule::save() {
         obj["title"] = t.title;
         obj["isDone"] = t.isDone;
         obj["categoryId"] = t.categoryId;
-        obj["parentTaskId"] = t.parentTaskId; // <--- Зберігаємо батька
+        obj["parentTaskId"] = t.parentTaskId;
         obj["isRecurring"] = t.isRecurring;
         obj["date"] = t.createdDate.toString(Qt::ISODate);
+        
+        // 🔥 ВИПРАВЛЕНО: Тепер це всередині циклу
+        obj["priority"] = t.priority; 
+
         taskArray.append(obj);
     }
     root["tasks"] = taskArray;
@@ -116,7 +167,7 @@ void ToDoModule::load() {
         c.isExpanded = obj["isExpanded"].toBool(true);
         categories.append(c);
     }
-
+    
     tasks.clear();
     QJsonArray taskArray = root["tasks"].toArray();
     for (const auto &val : taskArray) {
@@ -126,10 +177,13 @@ void ToDoModule::load() {
         t.title = obj["title"].toString();
         t.isDone = obj["isDone"].toBool();
         t.categoryId = obj["categoryId"].toString();
-        t.parentTaskId = obj["parentTaskId"].toString(); // <--- Завантажуємо батька
+        t.parentTaskId = obj["parentTaskId"].toString();
         t.isRecurring = obj["isRecurring"].toBool();
         t.createdDate = QDate::fromString(obj["date"].toString(), Qt::ISODate);
         
+        // 🔥 ВИПРАВЛЕНО: Тепер це всередині циклу і ПЕРЕД додаванням у список
+        t.priority = obj["priority"].toInt(0);
+
         if (t.isRecurring && t.createdDate != QDate::currentDate()) {
             t.isDone = false; 
             t.createdDate = QDate::currentDate();
@@ -138,7 +192,7 @@ void ToDoModule::load() {
     }
 }
 
-
+QWidget* ToDoModule::createSmallWidget() { return new QWidget(); }
 QWidget* ToDoModule::createFullPage() { return new QWidget(); }
 
 void ToDoModule::renameTask(const QString& taskId, const QString& newTitle) {
@@ -151,12 +205,47 @@ void ToDoModule::renameTask(const QString& taskId, const QString& newTitle) {
     }
 }
 
+void ToDoModule::cyclePriority(const QString& taskId) {
+    for (auto& task : tasks) {
+        if (task.id == taskId) {
+            // Математика: (0+1)%4 = 1 ... (3+1)%4 = 0
+            task.priority = (task.priority + 1) % 4;
+            save(); // Миттєве збереження
+            return;
+        }
+    }
+}
 
-QWidget* ToDoModule::createSmallWidget() {
-    ToDoSmallWidget *w = new ToDoSmallWidget(this);
-    // ВАЖЛИВО: Модуль має повідомляти віджет про зміни
-    // Але у нас немає сигналу dataChanged в модулі.
-    // Поки що віджет буде оновлюватись при перемальовці Dashboad.
-    // Або ми можемо додати сигнал в Module.h: void dataChanged();
-    return w;
+void ToDoModule::deleteCategory(const QString& catId) {
+    // 1. Видаляємо саму категорію
+    for (int i = 0; i < categories.size(); ++i) {
+        if (categories[i].id == catId) {
+            categories.removeAt(i);
+            break;
+        }
+    }
+    
+    // 2. Видаляємо ВСІ таски цієї категорії (каскадне видалення)
+    // Використовуємо removeIf (C++20 style) або класичний цикл
+    auto it = tasks.begin();
+    while (it != tasks.end()) {
+        if (it->categoryId == catId) {
+            it = tasks.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    save();
+}
+
+void ToDoModule::updateCategory(const QString& catId, const QString& newName, const QString& newColor) {
+    for (auto& cat : categories) {
+        if (cat.id == catId) {
+            cat.name = newName;
+            cat.color = newColor;
+            save();
+            return;
+        }
+    }
 }

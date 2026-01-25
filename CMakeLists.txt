@@ -57,8 +57,8 @@ set(PAGE_SOURCES
 
     src/ui/page/todo/TaskItemWidget.cpp
     src/ui/page/todo/TaskItemWidget.h
-    src/ui/page/todo/CategoryWidget.cpp
-    src/ui/page/todo/CategoryWidget.h
+    src/ui/page/todo/ToDoListWidget.cpp
+    src/ui/page/todo/ToDoListWidget.h
     src/ui/page/todo/ToDoPage.cpp
     src/ui/page/todo/ToDoPage.h
     src/ui/page/todo/ToDoRightBar.cpp
