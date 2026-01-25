@@ -98,7 +98,7 @@ Here is the current development status of the Academic OS modules:
 
 [![AcademicOS Repo Card](https://github-readme-stats.vercel.app/api/pin/?username=lomon23&repo=AcademicOS&theme=dark&show_owner=true)](https://github.com/lomon23/AcademicOS)
 
-![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=lomon23&layout=compact&theme=dark&hide=cmake,html)
+![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=lomon23&layout=compact&theme=dark&hide=cmake,html,python,css,typescript,javascript)
 
 ---
 
