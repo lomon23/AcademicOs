@@ -65,9 +65,9 @@ These modules are integrated into the UI but are currently under active developm
 
 ## 📸 Gallery
 
-| **Task Management** | **Modern UI** |
+| **Task Management** | **Bento Grid** |
 |:---:|:---:|
-| ![ToDo](assets/todo.png) | ![Analytics](assets/analytics.png) |
+| ![ToDo](assets/todo_v1_0.png) | ![Analytics](assets/dashboard_v0_4.png) |
 | *Category Tabs & Nesting* | *Dark Theme & Clean Layout* |
 
 ---
