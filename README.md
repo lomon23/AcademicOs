@@ -17,25 +17,53 @@
 
 Born from the need to have a fast, native, and distraction-free tool, Academic OS combines task management, financial tracking, and personal analytics into one cohesive interface.
 
-### ✨ Key Features
+---
 
-* **📊 Dashboard Hub:** A customizable overview of your day. See your tasks, financial balance, and activity charts at a glance.
-* **✅ Advanced To-Do System:** * Infinite task nesting (sub-tasks).
-    * Color-coded categories.
-    * **Live Progress Tracking:** Visual bars that update in real-time.
-* **📈 Analytics Engine:** Visualizes your productivity. Track your habits, sleep, or study hours with dynamic graphs (powered by QCustomPlot).
-* **💳 Wallet Manager:** Keep track of your finances, set goals, and monitor expenses.
-* **📅 Academic Calendar:** A clean, dark-themed calendar to keep track of exams and deadlines.
-* **📝 Daily Check-in:** A routine module to log your state, budget, and mood.
+## 🗺️ Roadmap & Module Status
+
+### ✅ Completed & Stable
+The **ToDo Module** is currently the core focus and is fully operational.
+
+* **📝 To-Do Manager**
+    * [x] **CRUD Operations:** Create, Edit, Delete tasks instantly.
+    * [x] **Deep Nesting:** Infinite sub-tasks support.
+    * [x] **Categories:** Dynamic creation of lists with custom colors.
+    * [x] **Smart Header:** Inline editing of list titles and colors.
+    * [x] **Progress Tracking:** Visual progress bars for complex tasks.
+    * [x] **UI/UX:** "Strict Dark" modern styling & Animations.
+
+* **⚙️ Core System**
+    * [x] Module Architecture.
+    * [x] JSON Data Serialization (Auto-save).
+
+### 🚧 In Progress / Planned
+These modules are integrated into the UI but are currently under active development or planned for the next sprint.
+
+* **📊 Dashboard**
+    * [ ] Widget Grid Layout.
+    * [ ] Daily Summary View.
+
+* **📈 Analytics**
+    * [ ] QCustomPlot Integration.
+    * [ ] Productivity Graphs.
+
+* **💳 Wallet 2.0**
+    * [ ] Transaction History.
+    * [ ] Budget Planning.
+
+* **📅 Productivity Tools**
+    * [ ] **Daily Check-in Page:** Morning/Evening routine logger.
+    * [ ] **Welcome Screen:** Onboarding for new users.
+    * [ ] **Settings:** Theme customization & data management.
 
 ---
 
 ## 📸 Gallery
 
-| **Task Management** | **Analytics & Progress** |
+| **Task Management** | **Modern UI** |
 |:---:|:---:|
 | ![ToDo](assets/todo.png) | ![Analytics](assets/analytics.png) |
-| *Deep nesting & color coding* | *Real-time data visualization* |
+| *Category Tabs & Nesting* | *Dark Theme & Clean Layout* |
 
 ---
 
@@ -77,20 +105,6 @@ Born from the need to have a fast, native, and distraction-free tool, Academic O
     ```bash
     ./AcademicOS
     ```
----
-
-## 🗺️ Roadmap & Status
-
-Here is the current development status of the Academic OS modules:
-
-| Progress | Module | Status |
-| :--- | :--- | :--- |
-| ![100%](https://geps.dev/progress/100) | **Core Architecture** | ✅ **Done** (Module System & JSON Storage) |
-| ![100%](https://geps.dev/progress/100) | **ToDo Module** | ✅ **Done** (CRUD, Nesting, Categories) |
-| ![85%](https://geps.dev/progress/85) | **Dashboard** | 🛠️ **Polishing** (Widgets & Grid Layout) |
-| ![15%](https://geps.dev/progress/15) | **Analytics** | 🚧 **In Progress** (UI ready, logic pending) |
-| ![0%](https://geps.dev/progress/0) | **Wallet 2.0** | 📅 Planned |
-| ![0%](https://geps.dev/progress/0) | **Settings & Calendar**| 📅 Planned |
 
 ---
 
