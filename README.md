@@ -25,6 +25,7 @@ Born from the need to have a fast, native, and distraction-free tool, Academic O
 The **ToDo Module** is currently the core focus and is fully operational.
 
 * **📝 To-Do Manager**
+    * [x] Default structure.
     * [x] **CRUD Operations:** Create, Edit, Delete tasks instantly.
     * [x] **Deep Nesting:** Infinite sub-tasks support.
     * [x] **Categories:** Dynamic creation of lists with custom colors.
@@ -40,18 +41,22 @@ The **ToDo Module** is currently the core focus and is fully operational.
 These modules are integrated into the UI but are currently under active development or planned for the next sprint.
 
 * **📊 Dashboard**
+    * [x] Default structure.
     * [ ] Widget Grid Layout.
     * [ ] Daily Summary View.
 
 * **📈 Analytics**
+    * [x] Default structure.
     * [ ] QCustomPlot Integration.
     * [ ] Productivity Graphs.
 
 * **💳 Wallet 2.0**
+    * [x] Default structure.
     * [ ] Transaction History.
     * [ ] Budget Planning.
 
 * **📅 Productivity Tools**
+    * [x] Default structure.
     * [ ] **Daily Check-in Page:** Morning/Evening routine logger.
     * [ ] **Welcome Screen:** Onboarding for new users.
     * [ ] **Settings:** Theme customization & data management.
