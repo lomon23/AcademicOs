@@ -28,7 +28,14 @@ set(CORE_SOURCES
 set(MODULES_SOURCES
     src/modules/Module.h
     
-
+    src/modules/analytics/AnalyticsPage.h
+    src/modules/analytics/AnalyticsPage.cpp
+    src/modules/analytics/AnalyticsHeader.h
+    src/modules/analytics/AnalyticsHeader.cpp
+    src/modules/analytics/MetricsPanel.h
+    src/modules/analytics/MetricsPanel.cpp
+    src/modules/analytics/ChartPanel.h
+    src/modules/analytics/ChartPanel.cpp
 
     src/modules/finance/FinanceModule.cpp
     src/modules/finance/FinanceModule.h
