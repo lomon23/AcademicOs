@@ -4,49 +4,53 @@
 #include <QMainWindow>
 #include <QStackedWidget>
 #include <QGridLayout>
-#include <QList> 
-#include <QJsonObject>
-#include <QJsonArray>
+#include <QMap>
 
-// Підключаємо твої класи
+// UI Components
 #include "components/Sidebar.h"
-#include "page/Dashboard.h" // Перевір шлях (page чи pages?)
-#include "../modules/analytics/AnalyticsModule.h" // <--- Для AnalyticsModule
-#include "../modules/Module.h"
+#include "page/Dashboard.h"
+
+// Core & Modules
+#include "../modules/Module.h" // Базовий клас модуля
+#include "../core/todo/ToDoModule.h"
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 private slots:
-    void onAddWidgetClicked(); // Слот для додавання
     void handleWidgetCreation(const QString &widgetName);
+    void openDailyPage();
 
 private:
+    // --- UI Methods ---
+    void setupUI();
+    void setupModules();
+    void setupConnections();
+    
+    // --- Logic Methods ---
+    void registerPage(const QString &id, QWidget *page);
+    void createFinance(); // Динамічне створення фінансів
+
+    // --- State Management ---
+    void saveDashboard();
+    void loadDashboard();
+
+    // --- Components ---
     QWidget *centralWidget;
     QGridLayout *mainLayout;
     Sidebar *sidebar;
     QStackedWidget *pagesStack;
+    QMap<QString, int> pageMap;
+
+    // --- Modules & Pages ---
     Dashboard *dashboardPage;
-
-    // Список всіх активних модулів (Аналітика, Фінанси...)
-    QList<Module*> activeModules;
-
-    // --- ФАБРИЧНІ МЕТОДИ ---
-    void createAnalytics(const QString &title = "New Chart");
-    void createFinance();
-
-    void openDailyPage();
-
-    QMap<QString, int> pageMap; // Ключ -> Індекс сторінки
-    void registerPage(const QString &id, QWidget *page);
-    // --- ПАМ'ЯТЬ (JSON) ---
-    void saveDashboard(); // Зберігає список віджетів
-    void loadDashboard(); // Відновлює їх   
+    ToDoModule *todoModule; // Зберігаємо вказівник, бо він потрібен дашборду
+    QList<QObject*> activeModules; // Список всіх активних модулів
 };
 
 #endif // MAINWINDOW_H

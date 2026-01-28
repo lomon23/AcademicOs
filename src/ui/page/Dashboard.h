@@ -6,7 +6,7 @@
 #include <QVector>
 #include <QLineEdit>
 #include <QCompleter> // Для автопідказки
-#include "../../modules/analytics/AnalyticsSmallWidget.h"
+
 #include "../../core/todo/ToDoModule.h"
 
 class Dashboard :public QWidget {

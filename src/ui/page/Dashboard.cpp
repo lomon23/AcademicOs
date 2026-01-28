@@ -122,9 +122,7 @@ void Dashboard::setupSearch() {
     
     // Стилізація випадаючого списку (Popup)
     QAbstractItemView *popup = completer->popup();
-    popup->setStyleSheet(
-        "QAbstractItemView { background: #252526; color: white; selection-background-color: #007FD4; }"
-    );
+
 
     searchBar->setCompleter(completer);
 }

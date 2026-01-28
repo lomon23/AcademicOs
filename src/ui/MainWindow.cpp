@@ -1,19 +1,14 @@
 #include "MainWindow.h"
-#include <QLabel>
 #include <QDebug>
-#include <QUuid>
 
 #include "../core/StorageManager.h"
-#include "../core/todo/ToDoModule.h"
-// Modules
-#include "../modules/analytics/AnalyticsSmallWidget.h"
-#include "../modules/analytics/AnalyticsFullPage.h"
-#include "../modules/analytics/AnalyticsModule.h"
+
+// Modules Headers
 #include "../modules/finance/FinanceModule.h"
 #include "../modules/finance/FinanceFullPage.h"
 #include "../modules/finance/FinanceSmallWidget.h"
 
-
+// Pages Headers
 #include "page/DailyPage.h"
 #include "page/todo/ToDoPage.h"
 #include "page/calendar/CalendarPage.h"
@@ -21,65 +16,97 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    // 1. Налаштування вікна
+    // 1. Налаштування вікна та сітки
+    setupUI();
+
+    // 2. Створення основних модулів (ToDo, Calendar, Daily)
+    setupModules();
+
+    // 3. Налаштування сигналів та слотів
+    setupConnections();
+
+    // 4. Відновлення стану (Finance widgets, etc.)
+    loadDashboard();
+
+    // 5. Стартова сторінка
+    if (pageMap.contains("dashboard")) {
+        pagesStack->setCurrentIndex(pageMap["dashboard"]);
+    }
+}
+
+MainWindow::~MainWindow() {
+    // Тут можна додати очистку пам'яті, якщо потрібно, 
+    // але Qt видаляє дочірні об'єкти автоматично.
+}
+
+// ==========================================
+// 1. UI SETUP
+// ==========================================
+void MainWindow::setupUI() {
     this->resize(1280, 720);
     this->setWindowTitle("Academic OS");
+    
     centralWidget = new QWidget(this);
     this->setCentralWidget(centralWidget);
 
-    // 2. Лейаут
     mainLayout = new QGridLayout(centralWidget);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
+    
+    // Sidebar (fixed width) vs Content (expanding)
     mainLayout->setColumnStretch(0, 0);
     mainLayout->setColumnStretch(1, 1);
 
-    // 3. Компоненти
     sidebar = new Sidebar(this);
     mainLayout->addWidget(sidebar, 0, 0, 1, 1);
 
     pagesStack = new QStackedWidget(centralWidget);
     mainLayout->addWidget(pagesStack, 0, 1, 1, 1);
+}
 
-    // 4. Сторінки
+// ==========================================
+// 2. MODULES SETUP
+// ==========================================
+void MainWindow::setupModules() {
+    // --- Dashboard ---
     dashboardPage = new Dashboard(this);
     registerPage("dashboard", dashboardPage);
 
+    // --- Calendar ---
     CalendarPage *calendarPage = new CalendarPage(this);
     registerPage("calendar", calendarPage);
-    
-    DailyPage *dailyPage = new DailyPage(this); // (До речі, краще зробити dailyPage членом класу в .h, але поки ок)
+
+    // --- Daily Page ---
+    DailyPage *dailyPage = new DailyPage(this);
     registerPage("daily", dailyPage);
 
-    // --- TODO MODULE SETUP ---
-    // 1. Створюємо модуль (Бекенд)
-    ToDoModule *todoModule = new ToDoModule(this);
-    activeModules.append(todoModule); // Додаємо в список активних модулів
+    // --- ToDo Module (Core) ---
+    todoModule = new ToDoModule(this);
+    activeModules.append(todoModule);
 
-    // 2. Створюємо сторінку (Фронтенд)
     ToDoPage *todoPage = new ToDoPage(this);
-    todoPage->setModule(todoModule); // Передаємо модуль сторінці
-
-    // 3. Реєструємо сторінку в системі навігації
+    todoPage->setModule(todoModule);
     registerPage("todo", todoPage);
 
-    // 4. Додаємо кнопку в Сайдбар // Можеш вибрати іншу іконку
-    // 5. НАВІГАЦІЯ (Ось тут ми спростили!)
+    // Зв'язуємо дашборд з тудушкою
+    dashboardPage->setToDoModule(todoModule);
+}
+
+// ==========================================
+// 3. CONNECTIONS SETUP
+// ==========================================
+void MainWindow::setupConnections() {
     
-    // Сайдбар
-// 6. Підключення навігації
+    // --- Navigation (Sidebar) ---
     connect(sidebar, &Sidebar::navigationRequested, [this](const QString &id){
         if (id == "daily") {
-            openDailyPage();
+            openDailyPage(); // Спеціальна логіка для Daily
         } 
         else if (id == "todo") {
-            // СПЕЦІАЛЬНИЙ ВИПАДОК ДЛЯ TODO
+            // Оновлюємо ToDo перед показом
             if (pageMap.contains("todo")) {
-                // Отримуємо вказівник на сторінку
                 ToDoPage *page = qobject_cast<ToDoPage*>(pagesStack->widget(pageMap["todo"]));
-                if (page) {
-                    page->refreshData(); // <--- ОНОВЛЮЄМО ДАНІ ПЕРЕД ПОКАЗОМ
-                }
+                if (page) page->refreshData();
                 pagesStack->setCurrentIndex(pageMap["todo"]);
             }
         }
@@ -91,102 +118,57 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
 
-    // Кнопка на дашборді (ТЕПЕР ЧИСТО!)
+    // --- Dashboard Specifics ---
     connect(dashboardPage, &Dashboard::requestDailyPage, this, &MainWindow::openDailyPage);
-
-    // 6. Логіка гаманця (це поки можна лишити тут, або теж винести в окремий метод saveDailyCheckIn)
-    connect(dailyPage, &DailyPage::walletCorrection, [this](double diff){
-        FinanceModule *finMod = nullptr;
-        for (Module *mod : activeModules) {
-            if (auto casted = qobject_cast<FinanceModule*>(mod)) {
-                finMod = casted;
-                break;
-            }
-        }
-        if (finMod) {
-            finMod->addTransaction("Daily Correction", diff, "Auto-adjustment");
-            qDebug() << "✅ Wallet updated!";
-        }
-    });
-    dashboardPage->setToDoModule(todoModule);
+    connect(dashboardPage, &Dashboard::requestWidget, this, &MainWindow::handleWidgetCreation);
+    
     connect(dashboardPage, &Dashboard::navigationRequested, [this](QString pageId){
-        // Логіка перемикання сторінок (копія з сайдбару або виклик методу)
-        // Найкраще: симулювати клік сайдбару або просто:
         if (pageMap.contains(pageId)) pagesStack->setCurrentIndex(pageMap[pageId]);
     });
 
-    // 7. Інше
-    connect(dashboardPage, &Dashboard::requestWidget, this, &MainWindow::handleWidgetCreation);
-    loadDashboard();
-    
-    if (pageMap.contains("dashboard")) {
-        pagesStack->setCurrentIndex(pageMap["dashboard"]);
+    // --- Wallet Logic Integration ---
+    // Слухаємо корекцію з Daily Page і передаємо в Finance Module
+    DailyPage *dailyPage = qobject_cast<DailyPage*>(pagesStack->widget(pageMap["daily"]));
+    if (dailyPage) {
+        connect(dailyPage, &DailyPage::walletCorrection, [this](double diff){
+            FinanceModule *finMod = nullptr;
+            // Шукаємо модуль фінансів
+            for (QObject *mod : activeModules) {
+                if (auto casted = qobject_cast<FinanceModule*>(mod)) {
+                    finMod = casted;
+                    break;
+                }
+            }
+            if (finMod) {
+                finMod->addTransaction("Daily Correction", diff, "Auto-adjustment");
+                qDebug() << "✅ Wallet updated via Daily Page!";
+            }
+        });
     }
 }
 
+// ==========================================
+// LOGIC & HELPER METHODS
+// ==========================================
 
+void MainWindow::registerPage(const QString &id, QWidget *page) {
+    int index = pagesStack->addWidget(page);
+    pageMap[id] = index;
+}
 
-void MainWindow::onAddWidgetClicked() {} 
-
-void MainWindow::handleWidgetCreation(const QString &widgetName)
-{
+void MainWindow::handleWidgetCreation(const QString &widgetName) {
     qDebug() << "Factory received request:" << widgetName;
 
-    if (widgetName == "Analytics Chart") {
-        createAnalytics(); // Створиться з дефолтною назвою
-    } 
-    else if (widgetName == "Finance Wallet") {
+    if (widgetName == "Finance Wallet") {
         createFinance();
     }
     
-    // Після додавання нового віджета — зберігаємось!
+    // Зберігаємо зміни
     saveDashboard();
 }
 
-// --- СТВОРЕННЯ АНАЛІТИКИ ---
-void MainWindow::createAnalytics(const QString &title)
-{
-    AnalyticsModule *module = new AnalyticsModule(this);
-    module->setTitle(title);
-    activeModules.append(module);
-
-    AnalyticsSmallWidget *smallWidget = module->createSmallWidget();
-    dashboardPage->addModuleWidget(smallWidget);
-    
-    AnalyticsFullPage *fullPage = module->createFullPage();
-    
-    // 1. ГЕНЕРУЄМО УНІКАЛЬНИЙ ID
-    // Кожен графік повинен мати свій ключ (наприклад: "chart_1234-5678...")
-    QString pageId = "chart_" + QUuid::createUuid().toString();
-    registerPage(pageId, fullPage);
-    sidebar->addChartButton(pageId, title); // Додаємо кнопку в сайдбар
-
-    // 3. ЛОГІКА ПЕРЕХОДУ
-    connect(smallWidget, &AnalyticsSmallWidget::clicked, [this, pageId]() {
-        if (pageMap.contains(pageId)) {
-            pagesStack->setCurrentIndex(pageMap[pageId]);
-        }
-    });
-
-    // 4. ЛОГІКА ПЕРЕЙМЕНУВАННЯ (LIVE SYNC)
-    connect(fullPage, &AnalyticsFullPage::configChanged, [this, smallWidget, module, pageId](const QString &newTitle){
-        // Оновлюємо віджет на дашборді
-        smallWidget->setTitle(newTitle);
-        // Оновлюємо внутрішні дані модуля
-        module->setTitle(newTitle);
-        
-        // ОНОВЛЮЄМО САЙДБАР МИТТЄВО!
-        sidebar->updateButtonText(pageId, newTitle);
-        
-        // Зберігаємо в JSON
-        saveDashboard(); 
-    });
-}
-
-// --- СТВОРЕННЯ ФІНАНСІВ ---
-void MainWindow::createFinance()
-{
-    // Перевірка, чи модуль вже існує
+void MainWindow::createFinance() {
+    // Перевірка на дублікат
     for (QObject *obj : activeModules) {
         if (qobject_cast<FinanceModule*>(obj)) return; 
     }
@@ -194,31 +176,54 @@ void MainWindow::createFinance()
     FinanceModule *module = new FinanceModule(this);
     activeModules.append(module);
     
-    // 1. СТВОРЮЄМО МАЛИЙ ВІДЖЕТ
+    // 1. Віджет на дашборд
     auto *smallWidget = module->createSmallWidget(); 
     dashboardPage->addModuleWidget(smallWidget);
     
-    // 2. СТВОРЮЄМО ПОВНУ СТОРІНКУ
+    // 2. Сторінка
     FinanceFullPage *fullPage = module->createFullPage();
-    QString pageId = "wallet"; // <--- Твій ID
+    QString pageId = "wallet";
+    registerPage(pageId, fullPage);
     
-    registerPage(pageId, fullPage); // Додає в стек і в мапу
-    
-    // 3. ЛОГІКА ПЕРЕХОДУ
-    // ТУТ БУЛА ПОМИЛКА: ми замінили pageIdx на pageId
+    // 3. Клік по віджету відкриває сторінку
     connect(smallWidget, &FinanceSmallWidget::clicked, [this, pageId]() {
-        // Шукаємо індекс сторінки по ID в нашій мапі
         if (pageMap.contains(pageId)) {
             pagesStack->setCurrentIndex(pageMap[pageId]);
         }
     });
 
-    // Якщо хочеш одразу відкрити гаманець після створення:
+    // Одразу відкриваємо
     if (pageMap.contains(pageId)) {
         pagesStack->setCurrentIndex(pageMap[pageId]);
     }
 }
-// --- SAVE / LOAD SYSTEM ---
+
+void MainWindow::openDailyPage() {
+    // 1. Знаходимо модуль фінансів для отримання балансу
+    FinanceModule *finMod = nullptr;
+    for (QObject *mod : activeModules) {
+        if (auto casted = qobject_cast<FinanceModule*>(mod)) {
+            finMod = casted;
+            break;
+        }
+    }
+
+    double currentBal = finMod ? finMod->getTotalBalance() : 0.0;
+
+    // 2. Відкриваємо та оновлюємо сторінку
+    if (pageMap.contains("daily")) {
+        DailyPage *page = qobject_cast<DailyPage*>(pagesStack->widget(pageMap["daily"]));
+        if (page) {
+            page->setWalletBalance(currentBal);
+            page->prepareForShow();
+        }
+        pagesStack->setCurrentIndex(pageMap["daily"]);
+    }
+}
+
+// ==========================================
+// STATE MANAGEMENT (SAVE / LOAD)
+// ==========================================
 
 void MainWindow::saveDashboard() {
     QJsonArray modulesArray;
@@ -226,19 +231,16 @@ void MainWindow::saveDashboard() {
     for (QObject *obj : activeModules) {
         QJsonObject json;
         
-        // Перевіряємо, який це модуль
+        // Зберігаємо тільки відомі модулі
         if (auto *fin = qobject_cast<FinanceModule*>(obj)) {
             json["type"] = "finance";
             modulesArray.append(json);
         } 
-        else if (auto *anal = qobject_cast<AnalyticsModule*>(obj)) {
-            json["type"] = "analytics";
-            json["title"] = anal->getTitle(); // Зберігаємо назву графіка
-            modulesArray.append(json);
-        }
+        
+        // ТУТ БУДЕ АНАЛІТИКА В МАЙБУТНЬОМУ
+        // else if (...) {}
     }
 
-    // Записуємо в глобальний конфіг під ключем "dashboard_layout"
     StorageManager::instance().saveConfig("dashboard_layout", modulesArray);
     qDebug() << "Dashboard saved!";
 }
@@ -255,47 +257,8 @@ void MainWindow::loadDashboard() {
 
             if (type == "finance") {
                 createFinance();
-            } 
-            else if (type == "analytics") {
-                QString title = obj["title"].toString();
-                if (title.isEmpty()) title = "New Chart";
-                createAnalytics(title);
             }
+            // Сюди додамо відновлення аналітики пізніше
         }
     }
-}
-void MainWindow::registerPage(const QString &id, QWidget *page) {
-    int index = pagesStack->addWidget(page);
-    pageMap[id] = index; // Запам'ятовуємо: "wallet_1" це індекс 5
-}
-
-void MainWindow::openDailyPage() {
-    // 1. Шукаємо фінанси
-    FinanceModule *finMod = nullptr;
-    for (Module *mod : activeModules) {
-        if (auto casted = qobject_cast<FinanceModule*>(mod)) {
-            finMod = casted;
-            break;
-        }
-    }
-
-    // 2. Беремо баланс
-    double currentBal = 0.0;
-    if (finMod) {
-        currentBal = finMod->getTotalBalance();
-    }
-
-    // 3. Відкриваємо сторінку
-    if (pageMap.contains("daily")) {
-        DailyPage *page = qobject_cast<DailyPage*>(pagesStack->widget(pageMap["daily"]));
-        if (page) {
-            page->setWalletBalance(currentBal);
-            page->prepareForShow(); // <--- ОСЬ ВОНО, ОНОВЛЕННЯ ФОРМИ!
-        }
-        pagesStack->setCurrentIndex(pageMap["daily"]);
-    }
-}
-
-MainWindow::~MainWindow() {
-
 }
