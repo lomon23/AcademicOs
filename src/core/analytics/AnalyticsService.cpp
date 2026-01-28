@@ -8,7 +8,7 @@
 #include <QDir>
 #include <QUuid>
 #include <QDebug>
-#include <QRandomGenerator> // Додай це зверху
+#include <QRandomGenerator>
 
 // =========================================================
 // Singleton & Setup
@@ -20,11 +20,15 @@ AnalyticsService& AnalyticsService::instance() {
 }
 
 AnalyticsService::AnalyticsService() {
-    loadData(); // Завантажуємо дані при старті програми
+    loadData();
+    
+    // Якщо файл пустий або це перший запуск - створюємо дефолтну вкладку
+    if (categoriesList.empty()) {
+        addCategory("General");
+    }
 }
 
 QString AnalyticsService::getFilePath() const {
-    // Зберігаємо поруч з іншими даними, але в окремому файлі analytics.json
     QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QDir dir(path);
     if (!dir.exists()) {
@@ -34,32 +38,37 @@ QString AnalyticsService::getFilePath() const {
 }
 
 // =========================================================
-// Save / Load System (JSON Magic)
+// Save / Load (JSON Magic)
 // =========================================================
 
 void AnalyticsService::saveData() {
-    QJsonArray metricsArray;
+    QJsonObject root;
 
-    // 1. Проходимось по всіх метриках у пам'яті
+    // 1. ЗБЕРІГАЄМО СПИСОК КАТЕГОРІЙ (Табів)
+    QJsonArray catsArray;
+    for (const QString &cat : categoriesList) {
+        catsArray.append(cat);
+    }
+    root["categories"] = catsArray;
+
+    // 2. ЗБЕРІГАЄМО МЕТРИКИ
+    QJsonArray metricsArray;
     for (const auto &metric : metricsList) {
         QJsonObject metricObj;
         metricObj["id"] = metric.id;
-        metricObj["name"] = metric.name; // <--- Ось тут зберігається назва, яку дав користувач
+        metricObj["name"] = metric.name;
+        metricObj["category"] = metric.category; 
+        metricObj["isVisible"] = metric.isVisible;
 
-        // 2. Серіалізуємо історію (Дати і Значення)
         QJsonObject historyObj;
         QMapIterator<QString, double> i(metric.history);
         while (i.hasNext()) {
             i.next();
-            // JSON любить рядки як ключі, тому дата - це рядок "2026-01-28"
             historyObj[i.key()] = i.value();
         }
         metricObj["values"] = historyObj;
-
         metricsArray.append(metricObj);
     }
-
-    QJsonObject root;
     root["metrics"] = metricsArray;
 
     // 3. Записуємо у файл
@@ -67,7 +76,7 @@ void AnalyticsService::saveData() {
     if (file.open(QIODevice::WriteOnly)) {
         file.write(QJsonDocument(root).toJson());
         file.close();
-        qDebug() << "📊 Analytics saved to:" << getFilePath();
+        qDebug() << "📊 Analytics saved categories & metrics to:" << getFilePath();
     } else {
         qWarning() << "⚠️ Could not save analytics!";
     }
@@ -86,15 +95,35 @@ void AnalyticsService::loadData() {
     QJsonDocument doc = QJsonDocument::fromJson(data);
     if (doc.isNull()) return;
 
-    metricsList.clear();
-    QJsonArray metricsArray = doc.object()["metrics"].toArray();
+    QJsonObject root = doc.object();
 
-    // Розпарсуємо JSON назад у C++ структури
+    // 1. ЧИТАЄМО КАТЕГОРІЇ
+    categoriesList.clear();
+    if (root.contains("categories")) {
+        QJsonArray catsArray = root["categories"].toArray();
+        for (const auto &val : catsArray) {
+            categoriesList.append(val.toString());
+        }
+    }
+    
+    // Захист: якщо файл старий і категорій нема -> додаємо General
+    if (categoriesList.empty()) {
+        categoriesList.append("General");
+    }
+
+    // 2. ЧИТАЄМО МЕТРИКИ
+    metricsList.clear();
+    QJsonArray metricsArray = root["metrics"].toArray();
+
     for (const auto &val : metricsArray) {
         QJsonObject obj = val.toObject();
         Metric m;
         m.id = obj["id"].toString();
         m.name = obj["name"].toString();
+        
+        // Якщо категорії нема (старий файл) - пишемо "General"
+        m.category = obj.contains("category") ? obj["category"].toString() : "General";
+        m.isVisible = obj.contains("isVisible") ? obj["isVisible"].toBool() : true;
 
         QJsonObject historyObj = obj["values"].toObject();
         for (auto it = historyObj.begin(); it != historyObj.end(); ++it) {
@@ -103,26 +132,26 @@ void AnalyticsService::loadData() {
 
         metricsList.push_back(m);
     }
-    qDebug() << "📊 Loaded" << metricsList.size() << "metrics.";
+    qDebug() << "📊 Loaded" << metricsList.size() << "metrics and" << categoriesList.size() << "categories.";
 }
 
 // =========================================================
 // Public Logic
 // =========================================================
 
-// Створення нової метрики (Наприклад: "Sleep", "Run")
-Metric AnalyticsService::createMetric(const QString &name) {
+Metric AnalyticsService::createMetric(const QString &name, const QString &category) {
     Metric m;
-    m.id = QUuid::createUuid().toString(); // Генеруємо унікальний ID (наприклад {ab34-....})
-    m.name = name;                         // Зберігаємо те, що ввів юзер
+    m.id = QUuid::createUuid().toString();
+    m.name = name;
+    m.category = category; // Прив'язуємо до поточної категорії
+    m.isVisible = true;
     
     metricsList.push_back(m);
-    saveData(); // Одразу зберігаємо зміни
+    saveData();
     return m;
 }
 
 void AnalyticsService::deleteMetric(const QString &id) {
-    // Видаляємо метрику зі списку за ID (lambda function c++)
     metricsList.erase(std::remove_if(metricsList.begin(), metricsList.end(),
                                      [&id](const Metric& m) { return m.id == id; }),
                       metricsList.end());
@@ -133,50 +162,68 @@ std::vector<Metric> AnalyticsService::getAllMetrics() const {
     return metricsList;
 }
 
-// Оновлення даних (Коли юзер ввів дані за сьогодні)
+std::vector<Metric> AnalyticsService::getMetricsByCategory(const QString &category) const {
+    std::vector<Metric> filtered;
+    for (const auto &m : metricsList) {
+        // Шукаємо точний збіг категорії
+        if (m.category == category) {
+            filtered.push_back(m);
+        }
+    }
+    return filtered;
+}
+
 void AnalyticsService::updateValue(const QString &metricId, const QDate &date, double value) {
     for (auto &m : metricsList) {
         if (m.id == metricId) {
             QString dateKey = date.toString("yyyy-MM-dd");
-            m.history[dateKey] = value; // Записуємо або перезаписуємо значення
+            m.history[dateKey] = value;
             saveData();
-            qDebug() << "Updated metric:" << m.name << "Date:" << dateKey << "Val:" << value;
             return;
         }
     }
 }
 
+// --- Категорії ---
+
+void AnalyticsService::addCategory(const QString &name) {
+    if (!categoriesList.contains(name)) {
+        categoriesList.append(name);
+        saveData(); 
+    }
+}
+
+QStringList AnalyticsService::getCategories() const {
+    return categoriesList;
+}
+
+// --- Генератор (Без зміни категорій) ---
+
 void AnalyticsService::generateMockData() {
     QDate today = QDate::currentDate();
 
     for (auto &metric : metricsList) {
-        metric.history.clear(); // Чистимо старе
-        
+        metric.history.clear(); 
         QString name = metric.name.toLower();
-        qDebug() << "🎲 Generating for:" << name;
-        // Логіка генерації залежно від типу
+
+        // МИ БІЛЬШЕ НЕ ЗМІНЮЄМО metric.category ТУТ!
+        // Категорія лишається такою, яку вибрав ти.
+
         for (int i = 30; i >= 0; --i) {
             QDate date = today.addDays(-i);
             QString dateKey = date.toString("yyyy-MM-dd");
             double val = 0.0;
 
-            // 1. СОН (Sleep) - Години (4..10)
-            if (name.contains("sleep") || name.contains("сон") || name.contains("спав")) {
+            // Логіка лише підбирає правдоподібні цифри
+            if (name.contains("sleep") || name.contains("сон")) {
                 val = 5.0 + (QRandomGenerator::global()->generate() % 5) + ((QRandomGenerator::global()->generate() % 10) / 10.0);
             } 
-            // 2. НАСТРІЙ (Mood) - Оцінка (1..10)
-            else if (name.contains("mood") || name.contains("настрій")) {
-                val = 1.0 + (QRandomGenerator::global()->generate() % 10);
+            else if (name.contains("code") || name.contains("c++")) {
+                val = (QRandomGenerator::global()->generate() % 10);
             }
-            // 3. КРОКИ (Steps) - Тисячі (2000..15000)
-            else if (name.contains("step") || name.contains("крок")) {
-                val = 2000 + (QRandomGenerator::global()->generate() % 13000);
+            else if (name.contains("money") || name.contains("uah")) {
+                val = 50 + (QRandomGenerator::global()->generate() % 500);
             }
-            // 4. КОД (Code) - Години (0..12)
-            else if (name.contains("code") || name.contains("код") || name.contains("c++")) {
-                val = (QRandomGenerator::global()->generate() % 10) + ((QRandomGenerator::global()->generate() % 10) / 10.0);
-            }
-            // 5. ДЕФОЛТ (Інше) - (0..100)
             else {
                 val = (QRandomGenerator::global()->generate() % 100);
             }
@@ -186,5 +233,5 @@ void AnalyticsService::generateMockData() {
     }
     
     saveData();
-    qDebug() << "🎲 Smart Mock data generated!";
+    qDebug() << "🎲 Mock values generated (Categories preserved)!";
 }

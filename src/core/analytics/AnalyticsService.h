@@ -7,14 +7,15 @@
 #include <QJsonArray>
 #include <QDate>
 #include <vector>
+#include <QStringList> // Важливо для списків
 
-// Структура однієї метрики
 struct Metric {
     QString id;
     QString name;
-    QMap<QString, double> history; // "2026-01-28" -> 10.0
+    QString category; 
+    QMap<QString, double> history;
+    bool isVisible = true;
 
-    // Хелпер: отримати значення за дату (або 0, якщо немає)
     double getValue(const QDate& date) const {
         QString dateKey = date.toString("yyyy-MM-dd");
         return history.value(dateKey, 0.0);
@@ -23,27 +24,32 @@ struct Metric {
 
 class AnalyticsService {
 public:
-    // Singleton (щоб доступ був звідусіль)
     static AnalyticsService& instance();
 
-    // 1. Завантаження/Збереження
+    // Основні методи
     void loadData();
     void saveData();
-    void generateMockData();
 
-    // 2. Управління метриками
-    Metric createMetric(const QString &name);
+    // Робота з Метриками
+    Metric createMetric(const QString &name, const QString &category);
     void deleteMetric(const QString &id);
     std::vector<Metric> getAllMetrics() const;
-
-    // 3. Запис даних (Сьогодні я пробіг 5 км)
+    std::vector<Metric> getMetricsByCategory(const QString &category) const;
     void updateValue(const QString &metricId, const QDate &date, double value);
+    
+    // Dev Tool
+    void generateMockData();
+
+    // --- Робота з Категоріями (Tabs) ---
+    void addCategory(const QString &name);
+    QStringList getCategories() const;
 
 private:
-    AnalyticsService(); // Приватний конструктор
+    AnalyticsService();
     QString getFilePath() const;
     
     std::vector<Metric> metricsList;
+    QStringList categoriesList; // Список вкладок
 };
 
 #endif // ANALYTICSSERVICE_H

@@ -35,10 +35,19 @@ void AnalyticsPage::setupLayout() {
     MetricsPanel *metrics = new MetricsPanel(this);
     ChartPanel *chart = new ChartPanel(this);
 
-    // --- ВАЖЛИВО: ЗВ'ЯЗОК (SIGNAL/SLOT) ---
-    // Коли тиснеш ⚡ в MetricsPanel -> ChartPanel оновлюється
-    connect(metrics, &MetricsPanel::metricSelected, chart, &ChartPanel::updateChart);
+    // --- ВАЖЛИВО: ЗВ'ЯЗКИ (ВИПРАВЛЕНО ТУТ) ---
     
+    // 1. Зміна вкладки (Header -> MetricsPanel)
+    // Було: categoryChanged -> refreshMetrics
+    // Стало: categorySelected -> setCategory
+    connect(header, &AnalyticsHeader::categorySelected, metrics, &MetricsPanel::setCategory);
+
+    // 2. Оновлення даних (MetricsPanel -> ChartPanel)
+    connect(metrics, &MetricsPanel::dataChanged, chart, [chart](){ chart->updateChart(); });
+
+    // 3. Клік по метриці (MetricsPanel -> ChartPanel)
+    connect(metrics, &MetricsPanel::metricSelected, chart, &ChartPanel::updateChart);
+
     // --- 4. РОЗСТАВЛЯЄМО ПО СІТЦІ ---
     
     // Ряд 0: Заголовок
@@ -47,17 +56,17 @@ void AnalyticsPage::setupLayout() {
     // Ряд 1: Лінія
     mainLayout->addWidget(line, 1, 0, 1, 2);
 
-    // Ряд 2: Хедер (Червоний)
+    // Ряд 2: Хедер (Кнопки)
     mainLayout->addWidget(header, 2, 0, 1, 2); 
 
-    // Ряд 3: Метрики (Зелені)
+    // Ряд 3: Метрики (Ліворуч)
     mainLayout->addWidget(metrics, 3, 0);
 
-    // Ряд 3: Графік (Фіолетовий)
+    // Ряд 3: Графік (Праворуч)
     mainLayout->addWidget(chart, 3, 1);
     
     // --- 5. РОЗТЯГУВАННЯ ---
-    mainLayout->setRowStretch(3, 1); // Графік тягнеться вниз
-    mainLayout->setColumnStretch(0, 0); // Ліва колонка фіксована
-    mainLayout->setColumnStretch(1, 1); // Права розтягується
+    mainLayout->setRowStretch(3, 1); 
+    mainLayout->setColumnStretch(0, 0); 
+    mainLayout->setColumnStretch(1, 1); 
 }
