@@ -25,7 +25,8 @@ Sidebar::Sidebar(QWidget *parent) : QWidget(parent) {
     createButton("todo", "Tasks", "✅");   // Ось твій Todo
     createButton("wallet", "Wallet", "💳"); // Додали Wallet сюди ж!
     createButton("calendar", "Calendar", "📅");
-
+    createButton("analytics","Analytics", "F");
+    
     mainLayout->addSpacing(15);
 
     // --- 3. СЕКЦІЯ ANALYTICS ---

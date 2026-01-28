@@ -13,6 +13,8 @@
 #include "page/todo/ToDoPage.h"
 #include "page/calendar/CalendarPage.h"
 
+#include "../modules/analytics/AnalyticsPage.h"
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -88,6 +90,8 @@ void MainWindow::setupModules() {
     todoPage->setModule(todoModule);
     registerPage("todo", todoPage);
 
+    AnalyticsPage *analyticsPage = new AnalyticsPage(this);
+    registerPage("analytics", analyticsPage);
     // Зв'язуємо дашборд з тудушкою
     dashboardPage->setToDoModule(todoModule);
 }
