@@ -31,8 +31,8 @@ MainWindow::MainWindow(QWidget *parent)
     loadDashboard();
 
     // 5. Стартова сторінка
-    if (pageMap.contains("dashboard")) {
-        pagesStack->setCurrentIndex(pageMap["dashboard"]);
+    if (pageMap.contains("analytics")) {
+        pagesStack->setCurrentIndex(pageMap["analytics"]);
     }
 }
 

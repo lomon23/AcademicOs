@@ -1,10 +1,10 @@
 #include "AnalyticsPage.h"
 
-// 1. ПІДКЛЮЧАЄМО БІБЛІОТЕКИ ДЛЯ ТЕКСТУ І ЛІНІЇ
+// 1. ПІДКЛЮЧАЄМО БІБЛІОТЕКИ
 #include <QLabel>
 #include <QFrame>
 
-// Підключаємо наших "дітей"
+// Підключаємо компоненти
 #include "AnalyticsHeader.h"
 #include "MetricsPanel.h"
 #include "ChartPanel.h"
@@ -16,26 +16,29 @@ AnalyticsPage::AnalyticsPage(QWidget *parent) : QWidget(parent) {
 void AnalyticsPage::setupLayout() {
     // Створюємо сітку
     QGridLayout *mainLayout = new QGridLayout(this);
-    mainLayout->setContentsMargins(20, 20, 20, 20); // Відступи
-    mainLayout->setSpacing(15); // Проміжки між блоками
+    mainLayout->setContentsMargins(20, 20, 20, 20);
+    mainLayout->setSpacing(15);
 
-    // --- 1. ЗАГОЛОВОК (TITLE) ---
-    // Важливо: ми пишем "QLabel *", щоб створити змінну
+    // --- 1. ЗАГОЛОВОК ---
     QLabel *titleLabel = new QLabel("Analytics", this);
     titleLabel->setStyleSheet("font-size: 28px; font-weight: bold; color: white;");
     
     // --- 2. ЛІНІЯ (SEPARATOR) ---
     QFrame *line = new QFrame(this);
-    line->setFrameShape(QFrame::HLine); // Горизонтальна лінія
+    line->setFrameShape(QFrame::HLine);
     line->setFrameShadow(QFrame::Sunken);
-    line->setStyleSheet("background-color: #333333;"); // Темно-сірий колір
-    line->setFixedHeight(1); // Товщина 1 піксель
+    line->setStyleSheet("background-color: #333333;");
+    line->setFixedHeight(1);
 
     // --- 3. СТВОРЮЄМО БЛОКИ ---
     AnalyticsHeader *header = new AnalyticsHeader(this);
     MetricsPanel *metrics = new MetricsPanel(this);
     ChartPanel *chart = new ChartPanel(this);
 
+    // --- ВАЖЛИВО: ЗВ'ЯЗОК (SIGNAL/SLOT) ---
+    // Коли тиснеш ⚡ в MetricsPanel -> ChartPanel оновлюється
+    connect(metrics, &MetricsPanel::metricSelected, chart, &ChartPanel::updateChart);
+    
     // --- 4. РОЗСТАВЛЯЄМО ПО СІТЦІ ---
     
     // Ряд 0: Заголовок
@@ -54,10 +57,7 @@ void AnalyticsPage::setupLayout() {
     mainLayout->addWidget(chart, 3, 1);
     
     // --- 5. РОЗТЯГУВАННЯ ---
-    // Ряд 3 (там де графіки) розтягується на все вільне місце
-    mainLayout->setRowStretch(3, 1); 
-    
-    // Колонка 1 (права) розтягується сильніше за ліву
-    mainLayout->setColumnStretch(0, 0); 
-    mainLayout->setColumnStretch(1, 1); 
+    mainLayout->setRowStretch(3, 1); // Графік тягнеться вниз
+    mainLayout->setColumnStretch(0, 0); // Ліва колонка фіксована
+    mainLayout->setColumnStretch(1, 1); // Права розтягується
 }

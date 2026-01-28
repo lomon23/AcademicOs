@@ -23,6 +23,10 @@ set(CORE_SOURCES
     src/core/todo/Task.h
     src/core/todo/ToDoModule.cpp
     src/core/todo/ToDoModule.h
+
+    src/core/analytics/AnalyticsService.cpp
+    src/core/analytics/AnalyticsService.h
+ 
     
 )
 set(MODULES_SOURCES
