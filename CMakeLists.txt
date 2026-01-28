@@ -28,12 +28,7 @@ set(CORE_SOURCES
 set(MODULES_SOURCES
     src/modules/Module.h
     
-    src/modules/analytics/AnalyticsSmallWidget.h
-    src/modules/analytics/AnalyticsModule.h
-    src/modules/analytics/AnalyticsFullPage.h
-    src/modules/analytics/AnalyticsSmallWidget.cpp
-    src/modules/analytics/AnalyticsModule.cpp
-    src/modules/analytics/AnalyticsFullPage.cpp
+
 
     src/modules/finance/FinanceModule.cpp
     src/modules/finance/FinanceModule.h
