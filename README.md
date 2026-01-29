@@ -37,15 +37,7 @@ The **ToDo Module** is currently the core focus and is fully operational.
     * [x] Module Architecture.
     * [x] JSON Data Serialization (Auto-save).
 
-### 🚧 In Progress / Planned
-These modules are integrated into the UI but are currently under active development or planned for the next sprint.
-
-* **📊 Dashboard**
-    * [x] Default structure.
-    * [ ] Widget Grid Layout.
-    * [ ] Daily Summary View.
-
-*📈 Analytics Engine
+* 📈 Analytics Engine
 
     *   [x] Multi-Graph Overlay: Visualize and compare multiple metrics on a single timeline.
 
@@ -64,6 +56,14 @@ These modules are integrated into the UI but are currently under active developm
     *   [x] Module Architecture.
 
     *   [x] JSON Data Serialization (Auto-save).
+### 🚧 In Progress / Planned
+These modules are integrated into the UI but are currently under active development or planned for the next sprint.
+
+* **📊 Dashboard**
+    * [x] Default structure.
+    * [ ] Widget Grid Layout.
+    * [ ] Daily Summary View.
+
 
 * **💳 Wallet 2.0**
     * [x] Default structure.
