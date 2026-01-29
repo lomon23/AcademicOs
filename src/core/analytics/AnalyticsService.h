@@ -41,6 +41,7 @@ public:
                         const QString &color = "#BD93F9", const QString &units = "");
 
     void deleteMetric(const QString &id);
+    void updateMetricDetails(const QString &id, const QString &newName, const QString &newColor, const QString &newUnits);
     
     // ... (решта методів: getAllMetrics, getMetricsByCategory, addCategory...)
     std::vector<Metric> getAllMetrics() const;

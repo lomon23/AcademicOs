@@ -242,3 +242,15 @@ void AnalyticsService::generateMockData() {
     saveData();
     qDebug() << "🎲 Mock values generated (Categories preserved)!";
 }
+
+void AnalyticsService::updateMetricDetails(const QString &id, const QString &newName, const QString &newColor, const QString &newUnits) {
+    for (auto &m : metricsList) {
+        if (m.id == id) {
+            m.name = newName;
+            m.color = newColor;
+            m.units = newUnits;
+            saveData(); // Зберігаємо зміни в JSON
+            return;
+        }
+    }
+}

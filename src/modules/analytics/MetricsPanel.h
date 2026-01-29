@@ -3,26 +3,36 @@
 
 #include <QWidget>
 #include <QVBoxLayout>
+#include <QStringList> // Важливо для списків
+#include <QMenu>
+#include <QAction>
+#include <QColorDialog>
 
 class MetricsPanel : public QWidget {
     Q_OBJECT
 public:
     explicit MetricsPanel(QWidget *parent = nullptr);
     
-    // Головний метод: каже панелі "Покажи метрики для цієї категорії"
+    // Метод, щоб перемалювати список
     void setCategory(const QString &category);
 
 signals:
     void dataChanged();
-    void metricSelected(QString id);
+    
+    // ОНОВЛЕНИЙ СИГНАЛ: Відправляє список ID, а не один ID
+    void selectionChanged(QStringList ids); 
 
 private slots:
     void onAddMetricClicked();
-    void onGenDataClicked(); // Залишимо кнопку для тестів
+    void onGenDataClicked();
+    void onContextMenuRequested(const QPoint &pos);
 
 private:
     QVBoxLayout *contentLayout;
-    QString currentCategory; // Зберігаємо поточну категорію (Health, Code...)
+    QString currentCategory;
+    
+    // НОВА ЗМІННА: Список вибраних метрик
+    QStringList selectedMetrics; 
 };
 
 #endif // METRICSPANEL_H

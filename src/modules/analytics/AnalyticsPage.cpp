@@ -46,7 +46,8 @@ void AnalyticsPage::setupLayout() {
     connect(metrics, &MetricsPanel::dataChanged, chart, [chart](){ chart->updateChart(); });
 
     // 3. Клік по метриці (MetricsPanel -> ChartPanel)
-    connect(metrics, &MetricsPanel::metricSelected, chart, &ChartPanel::updateChart);
+    connect(metrics, &MetricsPanel::selectionChanged, chart, &ChartPanel::updateChart);
+    // ...
 
     // --- 4. РОЗСТАВЛЯЄМО ПО СІТЦІ ---
     

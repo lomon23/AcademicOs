@@ -1,122 +1,115 @@
 #include "ChartPanel.h"
 #include <QVBoxLayout>
-#include <QDateTime> // <--- Обов'язково для роботи з датами
+#include <QDateTime>
 #include "../../core/analytics/AnalyticsService.h"
 
 ChartPanel::ChartPanel(QWidget *parent) : QWidget(parent) {
-    // 1. Лейаут
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    // 2. Створюємо графік
-    customPlot = new QCustomPlot(this);
-    layout->addWidget(customPlot);
-
-    // 3. Наводимо красу
+    customPlot = new QCustomPlot();
     setupDarkTheme();
-
-    // 4. Малюємо дані при старті
-    updateChart();
+    
+    layout->addWidget(customPlot);
+    updateChart(); // Малюємо пустий графік на старті
 }
 
 void ChartPanel::setupDarkTheme() {
-    // ТУТ ТІЛЬКИ НАЛАШТУВАННЯ КОЛЬОРІВ
-    
-    // Фон
+    // Темний фон
     customPlot->setBackground(QBrush(QColor("#1E1E1E")));
-    customPlot->axisRect()->setBackground(QBrush(QColor("#1E1E1E")));
-
-    // Осі (Білі)
+    
+    // Осі
     customPlot->xAxis->setBasePen(QPen(Qt::white));
     customPlot->xAxis->setTickPen(QPen(Qt::white));
     customPlot->xAxis->setSubTickPen(QPen(Qt::white));
     customPlot->xAxis->setTickLabelColor(Qt::white);
     customPlot->xAxis->setLabelColor(Qt::white);
-
+    
     customPlot->yAxis->setBasePen(QPen(Qt::white));
     customPlot->yAxis->setTickPen(QPen(Qt::white));
     customPlot->yAxis->setSubTickPen(QPen(Qt::white));
     customPlot->yAxis->setTickLabelColor(Qt::white);
     customPlot->yAxis->setLabelColor(Qt::white);
-    
-    // Прибираємо зайві рамки
-    customPlot->xAxis2->setVisible(false);
-    customPlot->yAxis2->setVisible(false);
+
+    // Сітка (Grid) - ледь помітна
+    customPlot->xAxis->grid()->setPen(QPen(QColor(140, 140, 140), 0, Qt::DotLine));
+    customPlot->yAxis->grid()->setPen(QPen(QColor(140, 140, 140), 0, Qt::DotLine));
+    customPlot->xAxis->grid()->setSubGridVisible(false);
+    customPlot->yAxis->grid()->setSubGridVisible(false);
 
     // Формат дати
     QSharedPointer<QCPAxisTickerDateTime> dateTicker(new QCPAxisTickerDateTime);
-    dateTicker->setDateTimeFormat("MMM dd"); 
+    dateTicker->setDateTimeFormat("MMM dd");
     customPlot->xAxis->setTicker(dateTicker);
 }
 
-void ChartPanel::updateChart(const QString &metricId) {
-    // 1. Очищаємо старі графіки
-    customPlot->clearGraphs();
+void ChartPanel::updateChart(const QStringList &metricIds) {
+    customPlot->clearGraphs(); 
+    
+    if (metricIds.isEmpty()) {
+        customPlot->yAxis->setLabel("Select metrics...");
+        customPlot->replot();
+        return;
+    }
 
-    // 2. Беремо всі метрики
     auto metrics = AnalyticsService::instance().getAllMetrics();
-    if (metrics.empty()) return; 
+    double maxVal = 0;
 
-    // --- ЛОГІКА ПОШУКУ (FIX) ---
-    const Metric *targetMetric = nullptr;
+    for (int i = 0; i < metricIds.size(); ++i) {
+        QString currentId = metricIds[i];
 
-    if (metricId.isEmpty()) {
-        targetMetric = &metrics[0]; // Якщо ID не передали - беремо першу
-    } else {
-        // Шукаємо метрику з потрібним ID
+        const Metric *target = nullptr;
         for (const auto &m : metrics) {
-            if (m.id == metricId) {
-                targetMetric = &m;
+            if (m.id == currentId) {
+                target = &m;
                 break;
             }
         }
+        if (!target) continue;
+
+        QVector<double> x, y;
+        for (auto it = target->history.begin(); it != target->history.end(); ++it) {
+            QDate date = QDate::fromString(it.key(), "yyyy-MM-dd");
+            QDateTime dt(date, QTime(0, 0, 0));
+            
+            double val = it.value();
+            x.append(dt.toMSecsSinceEpoch() / 1000.0);
+            y.append(val);
+            
+            if (val > maxVal) maxVal = val;
+        }
+
+        customPlot->addGraph();
+        customPlot->graph(i)->setData(x, y);
+        customPlot->graph(i)->setName(target->name);
+
+        // --- ВИПРАВЛЕННЯ ТУТ ---
+        QColor graphColor;
+        if (QColor::isValidColorName(target->color)) { // Було isValidColor
+            graphColor = QColor(target->color);
+        } else {
+            graphColor = NeonPalette::getColor(i);
+        }
+        // -----------------------
+        
+        QPen pen;
+        pen.setColor(graphColor);
+        pen.setWidth(3);
+        customPlot->graph(i)->setPen(pen);
+
+        QLinearGradient gradient(0, 0, 0, 400);
+        gradient.setColorAt(0, QColor(graphColor.red(), graphColor.green(), graphColor.blue(), 60)); 
+        gradient.setColorAt(1, QColor(graphColor.red(), graphColor.green(), graphColor.blue(), 0));   
+        customPlot->graph(i)->setBrush(QBrush(gradient));
     }
-    
-    // Якщо не знайшли за ID, беремо першу (безпечний фолбек)
-    if (!targetMetric) targetMetric = &metrics[0];
 
-    // ДЕБАГ: Виводимо в консоль, що саме ми зараз малюємо
-    qDebug() << "📈 Chart is drawing:" << targetMetric->name << " (ID:" << targetMetric->id << ")";
-
-    // --- ПІДПИС ОСІ Y ---
-    // Це допоможе тобі точно знати, чий графік ти бачиш
-    customPlot->yAxis->setLabel(targetMetric->name); 
-
-    // 3. Готуємо дані (використовуємо targetMetric замість metrics[0])
-    QVector<double> x(targetMetric->history.size()), y(targetMetric->history.size());
-
-    int i = 0;
-    for (auto it = targetMetric->history.begin(); it != targetMetric->history.end(); ++it) {
-        QString dateStr = it.key();
-        double val = it.value();
-
-        QDate date = QDate::fromString(dateStr, "yyyy-MM-dd");
-        QDateTime dt(date, QTime(0, 0, 0));
-        x[i] = dt.toMSecsSinceEpoch() / 1000.0; 
-        y[i] = val;
-        i++;
-    }
-
-    // 4. Додаємо графік
-    customPlot->addGraph();
-    customPlot->graph(0)->setData(x, y);
-
-    // Стиль (Неон)
-    QPen pen;
-    pen.setColor(QColor("#50FA7B"));
-    pen.setWidth(3);
-    customPlot->graph(0)->setPen(pen);
-
-    // Градієнт
-    QCPGraph *graph = customPlot->graph(0);
-    QLinearGradient gradient(0, 0, 0, 400);
-    gradient.setColorAt(0, QColor(80, 250, 123, 100)); 
-    gradient.setColorAt(1, QColor(80, 250, 123, 0));   
-    graph->setBrush(QBrush(gradient));
-
-    // 5. Масштабуємо
     customPlot->rescaleAxes();
-    customPlot->yAxis->setRangeUpper(customPlot->yAxis->range().upper * 1.2);
+    if (maxVal > 0) customPlot->yAxis->setRangeUpper(maxVal * 1.2);
     
+    customPlot->legend->setVisible(metricIds.size() > 0);
+    customPlot->legend->setBrush(QBrush(QColor(30, 30, 30, 200)));
+    customPlot->legend->setBorderPen(Qt::NoPen);
+    customPlot->legend->setTextColor(Qt::white);
+
     customPlot->replot();
 }
