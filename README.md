@@ -45,10 +45,25 @@ These modules are integrated into the UI but are currently under active developm
     * [ ] Widget Grid Layout.
     * [ ] Daily Summary View.
 
-* **📈 Analytics**
-    * [x] Default structure.
-    * [ ] QCustomPlot Integration.
-    * [ ] Productivity Graphs.
+*📈 Analytics Engine
+
+    *   [x] Multi-Graph Overlay: Visualize and compare multiple metrics on a single timeline.
+
+    *   [x] Dynamic Categories: Create isolated tabs (e.g., Sport, Health, Code) for better organization.
+
+    *   [x] Smart Visualization: Auto-scaling axes, gradient fills, and "Neon" color palette.
+    
+    *   [x] Multi-Select Interface: Toggle multiple metrics simultaneously via the sidebar.
+
+    *   [x] Context Menu Controls: Right-click to Rename, Delete, or pick a Custom Color (RGB/HEX).
+
+    *   [x] Backend Architecture: JSON-based storage with unit support (kg, min, times).
+
+    ⚙️ Core System
+
+    *   [x] Module Architecture.
+
+    *   [x] JSON Data Serialization (Auto-save).
 
 * **💳 Wallet 2.0**
     * [x] Default structure.
