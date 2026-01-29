@@ -12,7 +12,13 @@
 struct Metric {
     QString id;
     QString name;
-    QString category; 
+    QString category;
+    
+    // --- НОВІ ПОЛЯ ---
+    QString color; // HEX код (напр. "#50FA7B")
+    QString units; // Одиниці (напр. "kg", "min", "pages")
+    // -----------------
+    
     QMap<QString, double> history;
     bool isVisible = true;
 
@@ -24,32 +30,31 @@ struct Metric {
 
 class AnalyticsService {
 public:
+    // ... (instance, loadData, saveData без змін) ...
     static AnalyticsService& instance();
-
-    // Основні методи
     void loadData();
     void saveData();
 
-    // Робота з Метриками
-    Metric createMetric(const QString &name, const QString &category);
+    // Оновлений метод створення: тепер можна передати колір і одиниці
+    // (але зробимо їх необов'язковими, щоб не ламати старий код одразу)
+    Metric createMetric(const QString &name, const QString &category, 
+                        const QString &color = "#BD93F9", const QString &units = "");
+
     void deleteMetric(const QString &id);
+    
+    // ... (решта методів: getAllMetrics, getMetricsByCategory, addCategory...)
     std::vector<Metric> getAllMetrics() const;
     std::vector<Metric> getMetricsByCategory(const QString &category) const;
     void updateValue(const QString &metricId, const QDate &date, double value);
-    
-    // Dev Tool
-    void generateMockData();
-
-    // --- Робота з Категоріями (Tabs) ---
     void addCategory(const QString &name);
     QStringList getCategories() const;
+    void generateMockData(); // (Якщо ти її ще не видалив)
 
 private:
     AnalyticsService();
     QString getFilePath() const;
-    
     std::vector<Metric> metricsList;
-    QStringList categoriesList; // Список вкладок
+    QStringList categoriesList;
 };
 
 #endif // ANALYTICSSERVICE_H

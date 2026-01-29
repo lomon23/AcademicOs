@@ -59,6 +59,8 @@ void AnalyticsService::saveData() {
         metricObj["name"] = metric.name;
         metricObj["category"] = metric.category; 
         metricObj["isVisible"] = metric.isVisible;
+        metricObj["color"] = metric.color;
+        metricObj["units"] = metric.units;
 
         QJsonObject historyObj;
         QMapIterator<QString, double> i(metric.history);
@@ -125,6 +127,8 @@ void AnalyticsService::loadData() {
         m.category = obj.contains("category") ? obj["category"].toString() : "General";
         m.isVisible = obj.contains("isVisible") ? obj["isVisible"].toBool() : true;
 
+        m.color = obj.contains("color") ? obj["color"].toString() : "#BD93F9"; // Фіолетовий за замовчуванням
+        m.units = obj.contains("units") ? obj["units"].toString() : "";
         QJsonObject historyObj = obj["values"].toObject();
         for (auto it = historyObj.begin(); it != historyObj.end(); ++it) {
             m.history.insert(it.key(), it.value().toDouble());
@@ -138,13 +142,16 @@ void AnalyticsService::loadData() {
 // =========================================================
 // Public Logic
 // =========================================================
-
-Metric AnalyticsService::createMetric(const QString &name, const QString &category) {
+Metric AnalyticsService::createMetric(const QString &name, const QString &category, const QString &color, const QString &units) {
     Metric m;
     m.id = QUuid::createUuid().toString();
     m.name = name;
-    m.category = category; // Прив'язуємо до поточної категорії
+    m.category = category;
     m.isVisible = true;
+    
+    // Нові поля
+    m.color = color;
+    m.units = units;
     
     metricsList.push_back(m);
     saveData();
