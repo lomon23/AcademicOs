@@ -80,10 +80,10 @@ These modules are integrated into the UI but are currently under active developm
 
 ## 📸 Gallery
 
-| **Task Management** | **Bento Grid** |
-|:---:|:---:|
-| ![ToDo](resources/assets/todo_v1_0.png) | ![Analytics](resources/assets/dashboard_v0_4.png) |
-| *Category Tabs & Nesting* | *Dark Theme & Clean Layout* |
+| **Task Management** | **Dashboard & Widgets** | **Analytics Engine** |
+|:---:|:---:|:---:|
+| ![ToDo](resources/assets/todo_v1_0.png) | ![Dashboard](resources/assets/dashboard_v0_4.png) | ![Analytics](resources/assets/AnalyticsPage_v0_1.png) |
+| *Category Tabs & Deep Nesting* | *Dark Theme & Bento Layout* | *Multi-graph Overlay & Neon UI* |
 
 ---
 

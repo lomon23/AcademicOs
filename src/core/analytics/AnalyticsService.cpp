@@ -254,3 +254,38 @@ void AnalyticsService::updateMetricDetails(const QString &id, const QString &new
         }
     }
 }
+
+// Перейменування категорії
+void AnalyticsService::renameCategory(const QString &oldName, const QString &newName) {
+    if (oldName == newName || newName.isEmpty()) return;
+
+    // 1. Оновлюємо список категорій
+    for (auto &cat : categoriesList) {
+        if (cat == oldName) {
+            cat = newName;
+            break;
+        }
+    }
+
+    // 2. Оновлюємо всі метрики, що належали старій категорії
+    for (auto &m : metricsList) {
+        if (m.category == oldName) {
+            m.category = newName;
+        }
+    }
+    
+    saveData();
+}
+
+// Видалення категорії
+void AnalyticsService::deleteCategory(const QString &categoryName) {
+    // 1. Видаляємо з списку
+    categoriesList.removeAll(categoryName);
+
+    // 2. Видаляємо всі метрики цієї категорії (або можна переносити в 'General', але поки видаляємо)
+    auto it = std::remove_if(metricsList.begin(), metricsList.end(), 
+                             [&](const Metric& m) { return m.category == categoryName; });
+    metricsList.erase(it, metricsList.end());
+
+    saveData();
+}

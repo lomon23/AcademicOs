@@ -13,9 +13,11 @@ public:
 signals:
     void categorySelected(QString category); // Користувач вибрав вкладку
     void categoryAdded(); // Користувач створив нову (щоб оновити UI)
+    void layoutChanged();
 
 private slots:
     void onAddCategoryClicked(); // Слот для кнопки "+"
+    void onTabContextMenu(const QPoint &pos);
 
 private:
     QHBoxLayout *layout;
