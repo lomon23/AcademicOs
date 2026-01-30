@@ -2,6 +2,9 @@
 #include "../../core/analytics/AnalyticsService.h"
 #include <QPushButton>
 #include <QInputDialog>
+#include <QMenu>
+#include <QMessageBox>
+#include <QAction>
 
 AnalyticsHeader::AnalyticsHeader(QWidget *parent) : QWidget(parent) {
     setAttribute(Qt::WA_StyledBackground, true);
@@ -50,6 +53,10 @@ void AnalyticsHeader::createTabButton(const QString &name) {
     btn->setAutoExclusive(true); // Лише одна кнопка може бути натиснута
     btn->setCursor(Qt::PointingHandCursor);
     
+    // Вмикаємо Контекстне меню (ПКМ)
+    btn->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(btn, &QPushButton::customContextMenuRequested, this, &AnalyticsHeader::onTabContextMenu);
+    
     // Стиль
     btn->setStyleSheet(
         "QPushButton { color: #888; background: transparent; border: none; font-size: 16px; font-weight: bold; padding: 5px 10px; }"
@@ -77,8 +84,56 @@ void AnalyticsHeader::onAddCategoryClicked() {
                                          "", &ok);
     if (ok && !text.isEmpty()) {
         AnalyticsService::instance().addCategory(text);
-        refreshTabs(); // Оновлюємо кнопки
-        
-        // Автоматично перемикаємось на нову вкладку? (можна, але поки просто оновимо)
+        refreshTabs(); 
+        // Можна додати перемикання на нову вкладку тут
+    }
+}
+
+// --- ЛОГІКА КОНТЕКСТНОГО МЕНЮ ---
+void AnalyticsHeader::onTabContextMenu(const QPoint &pos) {
+    QPushButton *btn = qobject_cast<QPushButton*>(sender());
+    if (!btn) return;
+
+    QString categoryName = btn->text(); // Беремо назву прямо з кнопки
+
+    QMenu menu(this);
+    menu.setStyleSheet("QMenu { background-color: #2E2E2E; color: white; border: 1px solid #555; }"
+                       "QMenu::item:selected { background-color: #BD93F9; color: black; }");
+
+    QAction *renameAction = menu.addAction("✏️ Rename");
+    QAction *deleteAction = menu.addAction("🗑 Delete");
+
+    QAction *selectedItem = menu.exec(btn->mapToGlobal(pos));
+
+    if (selectedItem == renameAction) {
+        bool ok;
+        QString newName = QInputDialog::getText(this, "Rename Tab", "New Name:", 
+                                                QLineEdit::Normal, categoryName, &ok);
+        if (ok && !newName.isEmpty() && newName != categoryName) {
+            // Викликаємо метод бекенду (ти його вже додав у AnalyticsService)
+            AnalyticsService::instance().renameCategory(categoryName, newName);
+            refreshTabs(); 
+        }
+    }
+    else if (selectedItem == deleteAction) {
+        auto reply = QMessageBox::question(this, "Delete Category", 
+            "Delete '" + categoryName + "' and ALL its metrics?", 
+            QMessageBox::Yes | QMessageBox::No);
+            
+        if (reply == QMessageBox::Yes) {
+            // Викликаємо метод бекенду
+            AnalyticsService::instance().deleteCategory(categoryName);
+            refreshTabs();
+            
+            // Якщо після видалення є ще вкладки, вибираємо першу
+            if (layout->count() > 1) { // >1 бо там ще кнопка "+"
+                // Знаходимо першу кнопку (нульовий індекс)
+                if (auto firstBtn = qobject_cast<QPushButton*>(layout->itemAt(0)->widget())) {
+                    firstBtn->click();
+                }
+            } else {
+                emit categorySelected(""); // Пусто
+            }
+        }
     }
 }

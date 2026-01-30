@@ -50,6 +50,8 @@ public:
     void addCategory(const QString &name);
     QStringList getCategories() const;
     void generateMockData(); // (Якщо ти її ще не видалив)
+    void renameCategory(const QString &oldName, const QString &newName);
+    void deleteCategory(const QString &categoryName);
 
 private:
     AnalyticsService();
