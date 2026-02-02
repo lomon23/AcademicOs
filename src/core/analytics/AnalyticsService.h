@@ -18,6 +18,8 @@ struct Metric {
     QString color; // HEX код (напр. "#50FA7B")
     QString units; // Одиниці (напр. "kg", "min", "pages")
     // -----------------
+    double minVal = 0; // Наприклад 0
+    double maxVal = 0;
     
     QMap<QString, double> history;
     bool isVisible = true;
@@ -38,10 +40,13 @@ public:
     // Оновлений метод створення: тепер можна передати колір і одиниці
     // (але зробимо їх необов'язковими, щоб не ламати старий код одразу)
     Metric createMetric(const QString &name, const QString &category, 
-                        const QString &color = "#BD93F9", const QString &units = "");
+                        const QString &color, const QString &units,
+                        double minVal, double maxVal); // Додали range
 
     void deleteMetric(const QString &id);
-    void updateMetricDetails(const QString &id, const QString &newName, const QString &newColor, const QString &newUnits);
+    void updateMetricDetails(const QString &id, const QString &newName, 
+                             const QString &newColor, const QString &newUnits,
+                             double newMin, double newMax);
     
     // ... (решта методів: getAllMetrics, getMetricsByCategory, addCategory...)
     std::vector<Metric> getAllMetrics() const;

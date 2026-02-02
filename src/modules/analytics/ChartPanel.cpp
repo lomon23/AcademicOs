@@ -11,7 +11,7 @@ ChartPanel::ChartPanel(QWidget *parent) : QWidget(parent) {
 
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(10); // Відступ між тулбаром і графіком
+    layout->setSpacing(10); 
 
     // 1. Створюємо Toolbar
     setupToolbar(layout);
@@ -23,7 +23,6 @@ ChartPanel::ChartPanel(QWidget *parent) : QWidget(parent) {
     
     layout->addWidget(customPlot);
     
-    // Оновлюємо UI
     updateDateLabel();
     updateButtonsStyle();
 }
@@ -32,7 +31,7 @@ void ChartPanel::setupToolbar(QVBoxLayout *layout) {
     QHBoxLayout *toolbar = new QHBoxLayout();
     toolbar->setContentsMargins(10, 10, 10, 0);
 
-    // --- ЛІВА ЧАСТИНА: Навігація (< Дата >) ---
+    // --- Навігація ---
     QPushButton *btnPrev = new QPushButton("<", this);
     btnPrev->setFixedSize(30, 30);
     btnPrev->setCursor(Qt::PointingHandCursor);
@@ -50,29 +49,27 @@ void ChartPanel::setupToolbar(QVBoxLayout *layout) {
     btnNext->setStyleSheet("background: #333; color: white; border-radius: 4px; font-weight: bold;");
     connect(btnNext, &QPushButton::clicked, this, &ChartPanel::onNextClicked);
 
-    // --- ПРАВА ЧАСТИНА: Режими (Week | Month | Year) ---
+    // --- Режими ---
     btnWeek = new QPushButton("Week", this);
     btnMonth = new QPushButton("Month", this);
     btnYear = new QPushButton("Year", this);
 
-    // Спільний стиль для кнопок режимів буде в updateButtonsStyle()
-    btnWeek->setCursor(Qt::PointingHandCursor);
-    btnMonth->setCursor(Qt::PointingHandCursor);
-    btnYear->setCursor(Qt::PointingHandCursor);
-    
     btnWeek->setFixedSize(60, 30);
     btnMonth->setFixedSize(60, 30);
     btnYear->setFixedSize(60, 30);
+    
+    btnWeek->setCursor(Qt::PointingHandCursor);
+    btnMonth->setCursor(Qt::PointingHandCursor);
+    btnYear->setCursor(Qt::PointingHandCursor);
 
     connect(btnWeek, &QPushButton::clicked, [this](){ onModeChanged(Week); });
     connect(btnMonth, &QPushButton::clicked, [this](){ onModeChanged(Month); });
     connect(btnYear, &QPushButton::clicked, [this](){ onModeChanged(Year); });
 
-    // Збираємо все до купи
     toolbar->addWidget(btnPrev);
     toolbar->addWidget(dateLabel);
     toolbar->addWidget(btnNext);
-    toolbar->addStretch(); // Пружина посередині
+    toolbar->addStretch(); 
     toolbar->addWidget(btnWeek);
     toolbar->addWidget(btnMonth);
     toolbar->addWidget(btnYear);
@@ -92,15 +89,12 @@ void ChartPanel::updateButtonsStyle() {
 
 void ChartPanel::updateDateLabel() {
     if (currentMode == Week) {
-        // Показуємо: "Feb 02 - Feb 08, 2026"
         QDate startOfWeek = currentDate.addDays(-(currentDate.dayOfWeek() - 1));
         QDate endOfWeek = startOfWeek.addDays(6);
         dateLabel->setText(startOfWeek.toString("MMM dd") + " - " + endOfWeek.toString("MMM dd, yyyy"));
     } else if (currentMode == Month) {
-        // Показуємо: "February 2026"
         dateLabel->setText(currentDate.toString("MMMM yyyy"));
     } else {
-        // Показуємо: "2026"
         dateLabel->setText(currentDate.toString("yyyy"));
     }
 }
@@ -111,7 +105,7 @@ void ChartPanel::onPrevClicked() {
     else currentDate = currentDate.addYears(-1);
     
     updateDateLabel();
-    updateChart(currentMetricIds); // Перемальовуємо з новими датами
+    updateChart(currentMetricIds);
 }
 
 void ChartPanel::onNextClicked() {
@@ -125,21 +119,30 @@ void ChartPanel::onNextClicked() {
 
 void ChartPanel::onModeChanged(int mode) {
     currentMode = static_cast<TimeMode>(mode);
-    // При зміні режиму скидаємо дату на "сьогодні", або залишаємо як є - як зручніше.
-    // Поки залишаємо поточну дату як якір.
     updateButtonsStyle();
     updateDateLabel();
     updateChart(currentMetricIds);
 }
 
-// === ЛОГІКА ГРАФІКА ===
-
-void ChartPanel::updateChart(const QStringList &metricIds) {
-    // Якщо передали пустий список, але у нас є збережений - використовуємо його
-    // Якщо передали новий список - оновлюємо збережений
-    if (!metricIds.isEmpty()) {
-        currentMetricIds = metricIds;
+QPair<QDateTime, QDateTime> ChartPanel::getCurrentRange() const {
+    QDateTime start, end;
+    if (currentMode == Week) {
+        QDate d = currentDate.addDays(-(currentDate.dayOfWeek() - 1));
+        start = QDateTime(d, QTime(0, 0, 0));
+        end = QDateTime(d.addDays(6), QTime(23, 59, 59));
+    } else if (currentMode == Month) {
+        start = QDateTime(QDate(currentDate.year(), currentDate.month(), 1), QTime(0, 0, 0));
+        end = QDateTime(QDate(currentDate.year(), currentDate.month(), currentDate.daysInMonth()), QTime(23, 59, 59));
+    } else { 
+        start = QDateTime(QDate(currentDate.year(), 1, 1), QTime(0, 0, 0));
+        end = QDateTime(QDate(currentDate.year(), 12, 31), QTime(23, 59, 59));
     }
+    return {start, end};
+}
+
+// === ГОЛОВНИЙ МЕТОД ОНОВЛЕННЯ ===
+void ChartPanel::updateChart(const QStringList &metricIds) {
+    if (!metricIds.isEmpty()) currentMetricIds = metricIds;
 
     customPlot->clearGraphs();
     
@@ -148,113 +151,123 @@ void ChartPanel::updateChart(const QStringList &metricIds) {
         customPlot->replot();
         return;
     }
+    customPlot->yAxis->setLabel(""); 
 
-    // 1. Розраховуємо межі часу (X Axis Range)
+    // 1. Осі X
     auto range = getCurrentRange();
     double start = range.first.toMSecsSinceEpoch() / 1000.0;
     double end = range.second.toMSecsSinceEpoch() / 1000.0;
+    setupXAxis(start, end);
 
-    // 2. Налаштовуємо вісь X під режим
-    QSharedPointer<QCPAxisTickerDateTime> dateTicker(new QCPAxisTickerDateTime);
-    
-    if (currentMode == Week) {
-        dateTicker->setDateTimeFormat("ddd\ndd"); // Mon 02
-        dateTicker->setTickCount(7); // Хочемо бачити кожен день
-    } else if (currentMode == Month) {
-        dateTicker->setDateTimeFormat("d"); // 1, 5, 10...
-        dateTicker->setTickCount(10); // Не ліпимо 30 чисел, буде каша. Qt саме підбере крок.
-    } else {
-        dateTicker->setDateTimeFormat("MMM"); // Jan, Feb
-        dateTicker->setTickCount(12);
-    }
-    customPlot->xAxis->setTicker(dateTicker);
-    customPlot->xAxis->setRange(start, end); // Жорстко ставимо межі
+    // 2. Дані
+    auto allMetrics = AnalyticsService::instance().getAllMetrics();
+    double globalMaxVal = 0;
+    int graphIndex = 0;
 
-    // 3. Малюємо дані
-    auto metrics = AnalyticsService::instance().getAllMetrics();
-    double maxVal = 0;
-
-    for (int i = 0; i < currentMetricIds.size(); ++i) {
-        QString currentId = currentMetricIds[i];
-        const Metric *target = nullptr;
-        for (const auto &m : metrics) {
-            if (m.id == currentId) { target = &m; break; }
-        }
-        if (!target) continue;
+    for (const QString &id : currentMetricIds) {
+        auto it = std::find_if(allMetrics.begin(), allMetrics.end(), 
+                              [&id](const Metric& m){ return m.id == id; });
+        
+        if (it == allMetrics.end()) continue;
+        const Metric &metric = *it;
 
         QVector<double> x, y;
-        for (auto it = target->history.begin(); it != target->history.end(); ++it) {
-            QDate d = QDate::fromString(it.key(), "yyyy-MM-dd");
-            QDateTime dt(d, QTime(12, 0, 0)); // Ставимо середину дня, щоб точки були по центру дня
+        for (auto hIt = metric.history.begin(); hIt != metric.history.end(); ++hIt) {
+            QDate d = QDate::fromString(hIt.key(), "yyyy-MM-dd");
+            QDateTime dt(d, QTime(12, 0)); 
             
-            // Оптимізація: додаємо точку тільки якщо вона попадає в графік (або трохи з країв)
             if (dt >= range.first.addDays(-1) && dt <= range.second.addDays(1)) {
+                double val = hIt.value();
                 x.append(dt.toMSecsSinceEpoch() / 1000.0);
-                double val = it.value();
                 y.append(val);
-                if (val > maxVal) maxVal = val;
+                if (val > globalMaxVal) globalMaxVal = val;
             }
         }
 
         customPlot->addGraph();
-        customPlot->graph(i)->setData(x, y);
-        customPlot->graph(i)->setName(target->name);
-
-        // Колір
-        QColor graphColor;
-        if (QColor::isValidColorName(target->color)) graphColor = QColor(target->color);
-        else graphColor = NeonPalette::getColor(i);
+        customPlot->graph(graphIndex)->setData(x, y);
+        customPlot->graph(graphIndex)->setName(metric.name);
         
-        QPen pen;
-        pen.setColor(graphColor);
-        pen.setWidth(3);
-        customPlot->graph(i)->setPen(pen);
-
-        // Градієнт
-        QLinearGradient gradient(0, 0, 0, 400);
-        gradient.setColorAt(0, QColor(graphColor.red(), graphColor.green(), graphColor.blue(), 40)); 
-        gradient.setColorAt(1, QColor(graphColor.red(), graphColor.green(), graphColor.blue(), 0));   
-        customPlot->graph(i)->setBrush(QBrush(gradient));
-        
-        // Scatter Style (Точки на лінії) - це додасть краси, щоб бачити конкретні дні
-        customPlot->graph(i)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::white, 1.5), QBrush(graphColor), 6));
+        applyGraphStyle(customPlot->graph(graphIndex), metric, graphIndex);
+        graphIndex++;
     }
 
-    // 4. Фіналізація
-    if (maxVal > 0) customPlot->yAxis->setRange(0, maxVal * 1.2);
-    else customPlot->yAxis->setRange(0, 10); // Дефолтний масштаб, якщо пусто
+    // 3. Осі Y
+    setupYAxisScaling(globalMaxVal);
     
-    customPlot->legend->setVisible(currentMetricIds.size() > 0);
+    customPlot->legend->setVisible(true);
     customPlot->replot();
 }
 
-QPair<QDateTime, QDateTime> ChartPanel::getCurrentRange() const {
-    QDateTime start, end;
+// === ХЕЛПЕРИ ===
+
+void ChartPanel::setupXAxis(double start, double end) {
+    QSharedPointer<QCPAxisTickerDateTime> dateTicker(new QCPAxisTickerDateTime);
     
     if (currentMode == Week) {
-        // Початок тижня (Понеділок)
-        QDate d = currentDate.addDays(-(currentDate.dayOfWeek() - 1));
-        start = QDateTime(d, QTime(0, 0, 0));
-        end = QDateTime(d.addDays(6), QTime(23, 59, 59));
-    } 
-    else if (currentMode == Month) {
-        start = QDateTime(QDate(currentDate.year(), currentDate.month(), 1), QTime(0, 0, 0));
-        end = QDateTime(QDate(currentDate.year(), currentDate.month(), currentDate.daysInMonth()), QTime(23, 59, 59));
-    } 
-    else { // Year
-        start = QDateTime(QDate(currentDate.year(), 1, 1), QTime(0, 0, 0));
-        end = QDateTime(QDate(currentDate.year(), 12, 31), QTime(23, 59, 59));
+        dateTicker->setDateTimeFormat("ddd\ndd"); 
+        dateTicker->setTickCount(7);
+    } else if (currentMode == Month) {
+        dateTicker->setDateTimeFormat("d"); 
+        dateTicker->setTickCount(10); 
+    } else {
+        dateTicker->setDateTimeFormat("MMM"); 
+        dateTicker->setTickCount(12);
     }
     
-    return {start, end};
+    customPlot->xAxis->setTicker(dateTicker);
+    customPlot->xAxis->setRange(start, end);
+}
+
+void ChartPanel::applyGraphStyle(QCPGraph *graph, const Metric &metric, int index) {
+    QColor color;
+    if (QColor::isValidColorName(metric.color)) {
+        color = QColor(metric.color);
+    } else {
+        color = NeonPalette::getColor(index);
+    }
+
+    QPen pen;
+    pen.setColor(color);
+    pen.setWidth(3);
+    graph->setPen(pen);
+
+    QLinearGradient gradient(0, 0, 0, 400);
+    gradient.setColorAt(0, QColor(color.red(), color.green(), color.blue(), 40)); 
+    gradient.setColorAt(1, QColor(color.red(), color.green(), color.blue(), 0));   
+    graph->setBrush(QBrush(gradient));
+
+    graph->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 
+                           QPen(Qt::white, 1.5), QBrush(color), 6));
+}
+
+void ChartPanel::setupYAxisScaling(double globalMax) {
+    if (currentMetricIds.size() == 1) {
+        auto metrics = AnalyticsService::instance().getAllMetrics();
+        auto it = std::find_if(metrics.begin(), metrics.end(), 
+                              [this](const Metric& m){ return m.id == currentMetricIds.first(); });
+        
+        if (it != metrics.end()) {
+            const Metric &m = *it;
+            // Якщо користувач задав конкретні межі (наприклад 0-10)
+            if (m.maxVal > m.minVal) {
+                customPlot->yAxis->setRange(m.minVal, m.maxVal);
+                return; // Виходимо, масштаб зафіксовано
+            }
+        }
+    }
+
+    // 2. Авто-масштаб для Y (якщо метрик багато або межі не задані)
+    if (globalMax > 0) {
+        // Ставимо від 0 до Максимуму + 20% "повітря" зверху
+        customPlot->yAxis->setRange(0, globalMax * 1.2); 
+    } else {
+        // Якщо даних немає взагалі (пусто), ставимо дефолтну шкалу 0-10
+        customPlot->yAxis->setRange(0, 10); 
+    }
 }
 
 void ChartPanel::setupDarkTheme() {
-    // ... (Тут твій старий код теми без змін) ...
-    // Тільки видали там рядки про Interactions (Zoom/Drag),
-    // бо ми тепер керуємо часом через кнопки, 
-    // і ручний зум може зламати нашу логіку відображення дат.
-    
     customPlot->setBackground(QBrush(QColor("#1E1E1E")));
     customPlot->xAxis->setBasePen(QPen(Qt::white));
     customPlot->xAxis->setTickPen(QPen(Qt::white));

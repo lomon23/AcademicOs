@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QDate>
 #include "../../libs/qcustomplot/qcustomplot.h"
+#include "../../core/analytics/AnalyticsService.h"
 
 // Допоміжний клас для кольорів (залишаємо як було)
 class NeonPalette {
@@ -25,6 +26,7 @@ public:
 
 public slots:
     void updateChart(const QStringList &metricIds = QStringList());
+    
 
 private slots:
     // Слоти для навігації
@@ -51,7 +53,9 @@ private:
     void setupToolbar(QVBoxLayout *layout);
     void updateDateLabel();
     void updateButtonsStyle(); // Підсвітити активну кнопку (Week/Month/Year)
-    
+    void setupXAxis(double start, double end);
+    void applyGraphStyle(QCPGraph *graph, const Metric &metric, int index);
+    void setupYAxisScaling(double globalMax); // Тут буде логіка Min/Max
     // Хелпери для розрахунку початку і кінця періоду
     QPair<QDateTime, QDateTime> getCurrentRange() const;
 };

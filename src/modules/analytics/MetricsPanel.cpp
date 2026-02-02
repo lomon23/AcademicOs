@@ -1,6 +1,9 @@
 #include "MetricsPanel.h"
 #include "../../core/analytics/AnalyticsService.h"
+#include <QLineEdit>        // <--- Перевір
+#include <QDoubleSpinBox>   // <--- ДОДАЙ ЦЕ
 
+#include <QTimer>
 #include <QPushButton>
 #include <QLabel>
 #include <QInputDialog>
@@ -12,6 +15,7 @@
 #include <QAction>
 #include <QColorDialog>
 #include <QDebug>
+#include <QFormLayout>
 
 MetricsPanel::MetricsPanel(QWidget *parent) : QWidget(parent) {
     // 1. Основний лейаут
@@ -145,16 +149,7 @@ void MetricsPanel::setCategory(const QString &category) {
 }
 
 void MetricsPanel::onAddMetricClicked() {
-    bool ok;
-    QString name = QInputDialog::getText(this, "New Metric",
-                                         "Metric Name:", QLineEdit::Normal,
-                                         "", &ok);
-    
-    if (ok && !name.isEmpty()) {
-        AnalyticsService::instance().createMetric(name, currentCategory);
-        setCategory(currentCategory); 
-        emit dataChanged();
-    }
+    showInlineEditor();
 }
 
 void MetricsPanel::onGenDataClicked() {
@@ -204,7 +199,14 @@ void MetricsPanel::onContextMenuRequested(const QPoint &pos) {
         QColor newColor = QColorDialog::getColor(initColor, this, "Select Metric Color");
         
         if (newColor.isValid()) {
-            AnalyticsService::instance().updateMetricDetails(metricId, currentMetric.name, newColor.name(), currentMetric.units);
+            AnalyticsService::instance().updateMetricDetails(
+                metricId, 
+                currentMetric.name, 
+                newColor.name(), 
+                currentMetric.units, 
+                currentMetric.minVal, // <--- Додали
+                currentMetric.maxVal  // <--- Додали
+            );
             setCategory(currentCategory); 
             emit selectionChanged(selectedMetrics);
         }
@@ -223,8 +225,132 @@ void MetricsPanel::onContextMenuRequested(const QPoint &pos) {
                 name = text.left(start).trimmed();
                 units = text.mid(start + 1, end - start - 1);
             }
-            AnalyticsService::instance().updateMetricDetails(metricId, name, currentMetric.color, units);
+            AnalyticsService::instance().updateMetricDetails(
+                metricId, 
+                name, 
+                currentMetric.color, 
+                currentMetric.units,
+                currentMetric.minVal, // <--- Додали
+                currentMetric.maxVal  // <--- Додали
+            );
             setCategory(currentCategory);
         }
     }
+}
+
+void MetricsPanel::showInlineEditor() {
+    // 1. Створюємо контейнер (виглядає як картка, але "роздута")
+    QFrame *editor = new QFrame();
+    editor->setStyleSheet("background-color: #2A2A2A; border: 1px solid #BD93F9; border-radius: 8px;");
+    editor->setFixedHeight(170); // Більша висота для налаштувань
+
+    QVBoxLayout *layout = new QVBoxLayout(editor);
+    layout->setContentsMargins(8, 8, 8, 8);
+    layout->setSpacing(8);
+
+    // --- РЯДОК 1: Назва ---
+    QLineEdit *nameEdit = new QLineEdit();
+    nameEdit->setPlaceholderText("Metric Name (e.g. Sleep)");
+    nameEdit->setStyleSheet("background: #1E1E1E; color: white; border: 1px solid #444; padding: 5px;");
+    nameEdit->setFocus(); // Одразу ставимо курсор сюди
+
+    // --- РЯДОК 2: Одиниці та Колір ---
+    QHBoxLayout *row2 = new QHBoxLayout();
+    
+    QLineEdit *unitsEdit = new QLineEdit();
+    unitsEdit->setPlaceholderText("Units (h, kg)");
+    unitsEdit->setStyleSheet("background: #1E1E1E; color: white; border: 1px solid #444; padding: 5px;");
+    
+    QPushButton *colorBtn = new QPushButton();
+    colorBtn->setFixedSize(30, 30);
+    QString initColor = "#BD93F9";
+    colorBtn->setStyleSheet(QString("background-color: %1; border: none; border-radius: 4px;").arg(initColor));
+    colorBtn->setProperty("color", initColor); // Зберігаємо колір у властивості
+
+    // Логіка вибору кольору (все ж діалог, але маленький)
+    connect(colorBtn, &QPushButton::clicked, [this, colorBtn]() {
+        QColor c = QColorDialog::getColor(QColor(colorBtn->property("color").toString()), this);
+        if (c.isValid()) {
+            colorBtn->setStyleSheet(QString("background-color: %1; border: none; border-radius: 4px;").arg(c.name()));
+            colorBtn->setProperty("color", c.name());
+        }
+    });
+
+    row2->addWidget(unitsEdit);
+    row2->addWidget(new QLabel("Color:"));
+    row2->addWidget(colorBtn);
+
+    // --- РЯДОК 3: Межі (Min/Max) ---
+    QHBoxLayout *row3 = new QHBoxLayout();
+    
+    QDoubleSpinBox *minSpin = new QDoubleSpinBox();
+    minSpin->setRange(-9999, 9999);
+    minSpin->setPrefix("Min: ");
+    minSpin->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    minSpin->setStyleSheet("background: #1E1E1E; color: #AAA; border: 1px solid #444;");
+
+    QDoubleSpinBox *maxSpin = new QDoubleSpinBox();
+    maxSpin->setRange(-9999, 9999);
+    maxSpin->setPrefix("Max: ");
+    maxSpin->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    maxSpin->setStyleSheet("background: #1E1E1E; color: #AAA; border: 1px solid #444;");
+
+    row3->addWidget(minSpin);
+    row3->addWidget(maxSpin);
+
+    // --- ЛОГІКА ЗБЕРЕЖЕННЯ ---
+    auto saveFunc = [this, nameEdit, unitsEdit, colorBtn, minSpin, maxSpin]() {
+        QString name = nameEdit->text().trimmed();
+        if (name.isEmpty()) return; // Не зберігаємо пусте
+
+        // 1. Створюємо метрику (це безпечно)
+        AnalyticsService::instance().createMetric(
+            name,
+            currentCategory,
+            colorBtn->property("color").toString(),
+            unitsEdit->text(),
+            minSpin->value(),
+            maxSpin->value()
+        );
+        
+        // 2. ВАЖЛИВИЙ ФІКС: 
+        // Використовуємо таймер, щоб оновити інтерфейс ТІЛЬКИ після того, 
+        // як кнопка завершить свою роботу. Це прибере Segmentation Fault.
+        QTimer::singleShot(0, this, [this](){
+            setCategory(currentCategory); 
+            emit dataChanged();
+        });
+    };
+
+    // Зберігаємо по Enter на назві (для швидкості)
+    connect(nameEdit, &QLineEdit::returnPressed, saveFunc);
+    
+    // Або кнопка "Save" (галочка)
+    QPushButton *saveBtn = new QPushButton("✔ Save");
+    saveBtn->setCursor(Qt::PointingHandCursor);
+    saveBtn->setStyleSheet("background: #50FA7B; color: black; font-weight: bold; border-radius: 4px;");
+    connect(saveBtn, &QPushButton::clicked, saveFunc);
+
+    // Кнопка "Cancel"
+    QPushButton *cancelBtn = new QPushButton("✖");
+    cancelBtn->setCursor(Qt::PointingHandCursor);
+    cancelBtn->setFixedSize(30, 30);
+    cancelBtn->setStyleSheet("background: transparent; color: #FF5555; font-weight: bold;");
+    connect(cancelBtn, &QPushButton::clicked, [this](){
+        setCategory(currentCategory); // Просто оновлюємо список, редактор зникне
+    });
+
+    QHBoxLayout *actionRow = new QHBoxLayout();
+    actionRow->addStretch();
+    actionRow->addWidget(cancelBtn);
+    actionRow->addWidget(saveBtn);
+
+    // Збираємо все у фрейм
+    layout->addWidget(nameEdit);
+    layout->addLayout(row2);
+    layout->addLayout(row3);
+    layout->addLayout(actionRow);
+
+    // Вставляємо на початок списку!
+    contentLayout->insertWidget(0, editor);
 }
