@@ -29,12 +29,12 @@ AnalyticsService::AnalyticsService() {
 }
 
 QString AnalyticsService::getFilePath() const {
-    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString path = QDir::homePath() + "/AcademicOS";
     QDir dir(path);
     if (!dir.exists()) {
         dir.mkpath(".");
     }
-    return path + "/analytics.json";
+    return path + "/analytics_data.json";
 }
 
 // =========================================================

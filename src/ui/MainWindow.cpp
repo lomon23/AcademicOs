@@ -134,20 +134,6 @@ void MainWindow::setupConnections() {
     // Слухаємо корекцію з Daily Page і передаємо в Finance Module
     DailyPage *dailyPage = qobject_cast<DailyPage*>(pagesStack->widget(pageMap["daily"]));
     if (dailyPage) {
-        connect(dailyPage, &DailyPage::walletCorrection, [this](double diff){
-            FinanceModule *finMod = nullptr;
-            // Шукаємо модуль фінансів
-            for (QObject *mod : activeModules) {
-                if (auto casted = qobject_cast<FinanceModule*>(mod)) {
-                    finMod = casted;
-                    break;
-                }
-            }
-            if (finMod) {
-                finMod->addTransaction("Daily Correction", diff, "Auto-adjustment");
-                qDebug() << "✅ Wallet updated via Daily Page!";
-            }
-        });
     }
 }
 
@@ -218,8 +204,6 @@ void MainWindow::openDailyPage() {
     if (pageMap.contains("daily")) {
         DailyPage *page = qobject_cast<DailyPage*>(pagesStack->widget(pageMap["daily"]));
         if (page) {
-            page->setWalletBalance(currentBal);
-            page->prepareForShow();
         }
         pagesStack->setCurrentIndex(pageMap["daily"]);
     }

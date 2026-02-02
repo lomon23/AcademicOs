@@ -2,48 +2,33 @@
 #define DAILYPAGE_H
 
 #include <QWidget>
-#include <QVBoxLayout>
-#include <QFormLayout>
-#include <QLabel>
-#include <QPushButton>
-#include <QMap>
 #include <QDate>
-#include "../../core/MetricManager.h"
+#include <QVBoxLayout>
+#include <QLabel>
 
 class DailyPage : public QWidget {
     Q_OBJECT
 public:
     explicit DailyPage(QWidget *parent = nullptr);
-    
-    void prepareForShow(); 
-    
-    // НОВЕ: Встановлюємо баланс з гаманця перед показом
-    void setWalletBalance(double amount); 
 
-signals:
-    // НОВЕ: Сигнал, що ми вирахували витрати (щоб оновити Гаманець)
-    void walletCorrection(double spentAmount); 
-    void finished();
+    // Викликається при відкритті сторінки
+    void refreshData();
 
 private slots:
-    void onSaveClicked();
+    void onPrevDay();
+    void onNextDay();
+    void onToday();
+    void onDateSelected(); // Для вибору через календар (поки заготовка)
 
 private:
-    QVBoxLayout *mainLayout;
-    QFormLayout *formLayout;
-    QLabel *dateLabel;
-    double currentBalance = 0.0;
-    // Структура для зберігання посилань на створені віджети
-    struct InputField {
-        MetricType type;
-        QWidget *widget; // Вказівник на сам віджет (QSpinBox, QSlider тощо)
-    };
+    QDate currentDate;
     
-    // Мапа: ID метрики -> Поле вводу
-    QMap<QString, InputField> inputs; 
-
-    void setupUi();
-    void buildForm(); // Генерує поля на основі MetricManager
+    // UI Елементи
+    QLabel *dateLabel;
+    QVBoxLayout *metricsLayout; // Сюди додаємо спінбокси
+    
+    void updateDateLabel();
+    void buildForm(); // Будує список метрик
 };
 
 #endif // DAILYPAGE_H
