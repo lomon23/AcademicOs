@@ -1,229 +1,216 @@
 #include "DailyPage.h"
-#include <QSpinBox>
+#include "../../core/analytics/AnalyticsService.h"
+
+#include <QPushButton>
+#include <QScrollArea>
 #include <QDoubleSpinBox>
-#include <QSlider>
-#include <QCheckBox>
+#include <QFrame>
+#include <QHBoxLayout>
 #include <QDebug>
 
-DailyPage::DailyPage(QWidget *parent) : QWidget(parent)
-{
-    setupUi();
-}
+DailyPage::DailyPage(QWidget *parent) : QWidget(parent) {
+    currentDate = QDate::currentDate();
 
-void DailyPage::setupUi() {
-    mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(40, 40, 40, 40);
+    // === ГОЛОВНИЙ ЛЕЙАУТ ===
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(30, 30, 30, 30);
     mainLayout->setSpacing(20);
 
-    // 1. Заголовок
-    QLabel *title = new QLabel("Daily Check-in", this);
-    title->setStyleSheet("font-size: 28px; font-weight: bold; color: white;");
-    mainLayout->addWidget(title);
-
-    dateLabel = new QLabel(this);
-    dateLabel->setStyleSheet("font-size: 16px; color: #AAAAAA; margin-bottom: 20px;");
-    mainLayout->addWidget(dateLabel);
-
-    // 2. Форма (Сюди будемо додавати поля динамічно)
-    formLayout = new QFormLayout();
-    formLayout->setLabelAlignment(Qt::AlignLeft);
-    formLayout->setVerticalSpacing(20);
-    formLayout->setHorizontalSpacing(40);
-    mainLayout->addLayout(formLayout);
-
-    mainLayout->addStretch(); // Пружина, щоб кнопка була внизу
-
-    // 3. Кнопка Save
-    QPushButton *saveBtn = new QPushButton("Complete Check-in", this);
-    saveBtn->setCursor(Qt::PointingHandCursor);
-    saveBtn->setFixedHeight(50);
-    saveBtn->setStyleSheet(
-        "QPushButton { background-color: #00E676; color: #121212; border-radius: 8px; font-weight: bold; font-size: 16px; }"
-        "QPushButton:hover { background-color: #69F0AE; }"
-    );
-    connect(saveBtn, &QPushButton::clicked, this, &DailyPage::onSaveClicked);
-    mainLayout->addWidget(saveBtn);
-}
-
-void DailyPage::prepareForShow() {
-    // Оновлюємо дату
-    dateLabel->setText("For " + QDate::currentDate().toString("dddd, MMMM d, yyyy"));
+    // === 1. HEADER (Навігація Часу) ===
+    QHBoxLayout *headerLayout = new QHBoxLayout();
+    headerLayout->setSpacing(15);
     
-    // Перебудовуємо форму (раптом додалися нові метрики)
+    // Кнопка "Назад"
+    QPushButton *prevBtn = new QPushButton("<", this);
+    prevBtn->setFixedSize(40, 40);
+    prevBtn->setCursor(Qt::PointingHandCursor);
+    prevBtn->setStyleSheet("background: #333; color: white; border-radius: 8px; font-size: 18px; font-weight: bold;");
+    
+    // Дата (по центру)
+    dateLabel = new QLabel(this);
+    dateLabel->setStyleSheet("font-size: 22px; font-weight: bold; color: white;");
+    dateLabel->setAlignment(Qt::AlignCenter);
+    dateLabel->setMinimumWidth(200);
+    
+    // Кнопка "Вперед"
+    QPushButton *nextBtn = new QPushButton(">", this);
+    nextBtn->setFixedSize(40, 40);
+    nextBtn->setCursor(Qt::PointingHandCursor);
+    nextBtn->setStyleSheet("background: #333; color: white; border-radius: 8px; font-size: 18px; font-weight: bold;");
+
+    // Кнопка "Сьогодні"
+    QPushButton *todayBtn = new QPushButton("Today", this);
+    todayBtn->setCursor(Qt::PointingHandCursor);
+    todayBtn->setFixedHeight(40);
+    todayBtn->setStyleSheet("background-color: #BD93F9; color: black; font-weight: bold; border-radius: 8px; padding: 0 15px;");
+
+    headerLayout->addStretch();
+    headerLayout->addWidget(prevBtn);
+    headerLayout->addWidget(dateLabel);
+    headerLayout->addWidget(nextBtn);
+    headerLayout->addWidget(todayBtn);
+    headerLayout->addStretch();
+
+    mainLayout->addLayout(headerLayout);
+
+    // === 2. ОБЛАСТЬ МЕТРИК (Scroll Area) ===
+    QScrollArea *scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setStyleSheet("background: transparent;");
+
+    QWidget *scrollContent = new QWidget();
+    scrollContent->setStyleSheet("background: transparent;");
+    metricsLayout = new QVBoxLayout(scrollContent);
+    metricsLayout->setSpacing(15);
+    metricsLayout->setAlignment(Qt::AlignTop); // Притискаємо до верху
+
+    scrollArea->setWidget(scrollContent);
+    mainLayout->addWidget(scrollArea);
+
+    // === CONNECTIONS ===
+    connect(prevBtn, &QPushButton::clicked, this, &DailyPage::onPrevDay);
+    connect(nextBtn, &QPushButton::clicked, this, &DailyPage::onNextDay);
+    connect(todayBtn, &QPushButton::clicked, this, &DailyPage::onToday);
+
+    updateDateLabel();
     buildForm();
 }
 
+void DailyPage::updateDateLabel() {
+    if (currentDate == QDate::currentDate()) {
+        dateLabel->setText("Today");
+        dateLabel->setStyleSheet("font-size: 22px; font-weight: bold; color: #50FA7B;"); // Зелений для сьогодні
+    } else {
+        dateLabel->setText(currentDate.toString("ddd, dd MMM yyyy"));
+        dateLabel->setStyleSheet("font-size: 22px; font-weight: bold; color: white;");
+    }
+}
+
+void DailyPage::onPrevDay() {
+    currentDate = currentDate.addDays(-1);
+    updateDateLabel();
+    buildForm(); // Перебудовуємо форму для нової дати
+}
+
+void DailyPage::onNextDay() {
+    currentDate = currentDate.addDays(1);
+    updateDateLabel();
+    buildForm();
+}
+
+void DailyPage::onToday() {
+    currentDate = QDate::currentDate();
+    updateDateLabel();
+    buildForm();
+}
+
+void DailyPage::refreshData() {
+    // Коли відкриваємо сторінку - оновлюємо (раптом додали нову метрику в Analytics)
+    buildForm();
+}
+
+// === ГЕНЕРАЦІЯ ФОРМИ ===
 void DailyPage::buildForm() {
-    // Безпечне очищення лейауту
+    // 1. Очищаємо старі віджети
     QLayoutItem *item;
-    while ((item = formLayout->takeAt(0)) != nullptr) {
-        if (item->widget()) {
-            delete item->widget();
-        }
+    while ((item = metricsLayout->takeAt(0)) != nullptr) {
+        if (item->widget()) delete item->widget();
         delete item;
     }
-    inputs.clear();
 
-    // Отримуємо список метрик з "Мозку"
-    auto metrics = MetricManager::instance().getAllDefinitions();
+    // 2. Отримуємо дані
+    auto categories = AnalyticsService::instance().getCategories();
+    auto metrics = AnalyticsService::instance().getAllMetrics();
 
-    for (const auto &def : metrics) {
-        QWidget *inputWidget = nullptr;
+    if (categories.isEmpty()) {
+        QLabel *empty = new QLabel("No metrics found.\nGo to Analytics page to add metrics first!");
+        empty->setStyleSheet("color: #666; font-size: 16px; padding: 40px;");
+        empty->setAlignment(Qt::AlignCenter);
+        metricsLayout->addWidget(empty);
+        return;
+    }
 
-        // СТВОРЮЄМО ВІДЖЕТ В ЗАЛЕЖНОСТІ ВІД ТИПУ
-        switch (def.type) {
-            case MetricType::Number: {
-                QSpinBox *spin = new QSpinBox();
-                spin->setRange((int)def.min, (int)def.max);
-                spin->setStyleSheet("background: #333; color: white; padding: 5px; border-radius: 4px;");
-                spin->setSuffix(" " + def.unit);
-                inputWidget = spin;
-                break;
-            }
-            case MetricType::Money: {
-                QWidget *moneyContainer = new QWidget();
-                QVBoxLayout *vLayout = new QVBoxLayout(moneyContainer);
-                vLayout->setContentsMargins(0,0,0,0);
-                vLayout->setSpacing(5);
-
-                // 1. Інфо
-                QLabel *infoLabel = new QLabel(QString("System Balance: %1 %2").arg(currentBalance).arg(def.unit));
-                infoLabel->setStyleSheet("color: #888; font-size: 12px;");
-                vLayout->addWidget(infoLabel);
-
-                // 2. Інпут (Actual Money)
-                QDoubleSpinBox *spin = new QDoubleSpinBox();
-                spin->setRange(-1000000, 1000000); // Дозволяємо і мінуси (борги)
-                spin->setValue(currentBalance); 
-                spin->setSuffix(" " + def.unit);
-                spin->setStyleSheet("background: #333; color: white; padding: 8px; border-radius: 4px; font-weight: bold; font-size: 14px;");
-                vLayout->addWidget(spin);
-
-                // 3. Різниця (Live calculation)
-                QLabel *diffLabel = new QLabel("No changes");
-                diffLabel->setStyleSheet("color: #888; font-weight: bold; font-size: 13px;");
-                vLayout->addWidget(diffLabel);
-
-                // 👇 ОНОВЛЕНА ЛОГІКА ТУТ
-                connect(spin, &QDoubleSpinBox::valueChanged, [this, diffLabel, def](double actualVal){
-                    double diff = actualVal - currentBalance; // Формула: Реальність - Система
-
-                    if (diff == 0) {
-                        diffLabel->setText("No changes");
-                        diffLabel->setStyleSheet("color: #888;");
-                    } else if (diff < 0) {
-                        // Витратив (червоний)
-                        diffLabel->setText(QString("Spent: %1 %2").arg(diff).arg(def.unit));
-                        diffLabel->setStyleSheet("color: #FF5252;"); 
-                    } else {
-                        // Знайшов/Заробив (зелений)
-                        diffLabel->setText(QString("Income: +%1 %2").arg(diff).arg(def.unit));
-                        diffLabel->setStyleSheet("color: #00E676;"); 
-                    }
-                });
-
-                inputWidget = spin;
-                
-                QLabel *label = new QLabel(def.name);
-                label->setStyleSheet("color: #DDD; font-size: 14px; margin-top: 10px;");
-                formLayout->addRow(label, moneyContainer);
-                
-                inputs[def.id] = {def.type, spin};
-                continue;
-            }
-            case MetricType::Slider: {
-                // Для слайдера робимо контейнер (Слайдер + Цифра збоку)
-                QWidget *container = new QWidget();
-                QHBoxLayout *hLayout = new QHBoxLayout(container);
-                hLayout->setContentsMargins(0,0,0,0);
-                
-                QSlider *slider = new QSlider(Qt::Horizontal);
-                slider->setRange((int)def.min, (int)def.max);
-                
-                QLabel *valLabel = new QLabel(QString::number(def.min));
-                valLabel->setFixedWidth(30);
-                valLabel->setStyleSheet("color: white; font-weight: bold;");
-
-                connect(slider, &QSlider::valueChanged, [valLabel](int v){
-                    valLabel->setText(QString::number(v));
-                });
-
-                hLayout->addWidget(slider);
-                hLayout->addWidget(valLabel);
-                
-                // Зберігаємо сам слайдер як інпут, а не контейнер
-                inputWidget = slider; 
-                
-                // Але в форму додаємо контейнер
-                QLabel *label = new QLabel(def.name);
-                label->setStyleSheet("color: #DDD; font-size: 14px;");
-                formLayout->addRow(label, container);
-                
-                inputs[def.id] = {def.type, slider}; 
-                continue; // Особливий випадок, вже додали в форму
-            }
-            case MetricType::Boolean: {
-                QCheckBox *check = new QCheckBox();
-                check->setStyleSheet("QCheckBox { color: white; }");
-                inputWidget = check;
-                break;
-            }
+    // 3. Будуємо по категоріях
+    for (const QString &cat : categories) {
+        // Знаходимо метрики для цієї категорії
+        std::vector<Metric> catMetrics;
+        for (const auto &m : metrics) {
+            if (m.category == cat) catMetrics.push_back(m);
         }
 
-        if (inputWidget) {
-            // Стилізація підпису
-            QLabel *label = new QLabel(def.name);
-            label->setStyleSheet("color: #DDD; font-size: 14px;");
+        if (catMetrics.empty()) continue;
+
+        // --- Заголовок Категорії ---
+        QLabel *catHeader = new QLabel(cat);
+        catHeader->setStyleSheet("color: #BD93F9; font-size: 16px; font-weight: bold; margin-top: 10px; text-transform: uppercase;");
+        metricsLayout->addWidget(catHeader);
+
+        // --- Контейнер (Картка) ---
+        QFrame *card = new QFrame();
+        card->setStyleSheet("background-color: #1E1E1E; border-radius: 12px; border: 1px solid #2A2A2A;");
+        QVBoxLayout *cardLayout = new QVBoxLayout(card);
+        cardLayout->setSpacing(10);
+        cardLayout->setContentsMargins(15, 15, 15, 15);
+
+        for (const auto &m : catMetrics) {
+            QHBoxLayout *row = new QHBoxLayout();
             
-            formLayout->addRow(label, inputWidget);
-            inputs[def.id] = {def.type, inputWidget};
-        }
-    }
-}
+            // Назва
+            QLabel *nameLabel = new QLabel(m.name);
+            nameLabel->setStyleSheet("color: #E0E0E0; font-size: 15px; border: none; background: transparent;");
+            
+            // Поле вводу
+            QDoubleSpinBox *input = new QDoubleSpinBox();
+            input->setRange(0, 99999);
+            input->setDecimals(1); // 1 знак після коми (напр. 5.5 км)
+            input->setButtonSymbols(QAbstractSpinBox::NoButtons); // Без стрілочок (чисто)
+            input->setAlignment(Qt::AlignRight);
+            input->setFixedWidth(100);
+            input->setFixedHeight(35);
+            
+            // Стиль інпута
+            input->setStyleSheet(
+                "QDoubleSpinBox { background: #252525; color: white; border: 1px solid #333; border-radius: 6px; padding: 0 10px; font-weight: bold; }"
+                "QDoubleSpinBox:focus { border: 1px solid #BD93F9; background: #2A2A2A; }"
+            );
 
-void DailyPage::onSaveClicked() {
-    QDate today = QDate::currentDate();
-
-    for (auto it = inputs.begin(); it != inputs.end(); ++it) {
-        QString id = it.key();
-        InputField field = it.value();
-        QVariant valueToLog;
-
-        switch (field.type) {
-            case MetricType::Money: {
-                double actualBalance = static_cast<QDoubleSpinBox*>(field.widget)->value();
-                
-                // ФОРМУЛА: Що_є_зараз - Що_знає_система
-                // Якщо ввів 3000, а було 3130 -> 3000 - 3130 = -130.
-                double diff = actualBalance - currentBalance; 
-                
-                valueToLog = actualBalance; // В лог пишемо "3000" (стан)
-                
-                if (diff != 0) {
-                    // ВАЖЛИВО: Тут ми вже НЕ ставимо мінус вручну!
-                    // emit walletCorrection(-diff); <--- БУЛО ТАК (НЕПРАВИЛЬНО для нової логіки)
-                    emit walletCorrection(diff);   // <--- МАЄ БУТИ ТАК (знак вже правильний)
-                }
-                break;
+            // Встановлюємо значення з історії (якщо є)
+            QString dateKey = currentDate.toString("yyyy-MM-dd");
+            if (m.history.contains(dateKey)) {
+                input->setValue(m.history.value(dateKey));
             }
-            // ... інші кейси без змін ...
-            case MetricType::Number:
-                valueToLog = static_cast<QSpinBox*>(field.widget)->value();
-                break;
-            case MetricType::Slider:
-                valueToLog = static_cast<QSlider*>(field.widget)->value();
-                break;
-            case MetricType::Boolean:
-                valueToLog = static_cast<QCheckBox*>(field.widget)->isChecked();
-                break;
+
+            // Одиниці виміру (якщо є)
+            if (!m.units.isEmpty()) {
+                input->setSuffix(" " + m.units);
+            }
+
+            // --- ЗБЕРЕЖЕННЯ (Auto-Save) ---
+            connect(input, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [m, this](double val){
+                AnalyticsService::instance().updateValue(m.id, currentDate, val);
+            });
+
+            row->addWidget(nameLabel);
+            row->addStretch();
+            row->addWidget(input);
+            cardLayout->addLayout(row);
+
+            // Розділювач (лінія), якщо не останній
+            if (m.id != catMetrics.back().id) {
+                QFrame *line = new QFrame();
+                line->setFixedHeight(1);
+                line->setStyleSheet("background: #2A2A2A; border: none;");
+                cardLayout->addWidget(line);
+            }
         }
-
-        MetricManager::instance().logValue(id, today, valueToLog);
+        
+        metricsLayout->addWidget(card);
     }
-
-    qDebug() << "Daily data saved & processed!";
-    emit finished();
+    
+    metricsLayout->addStretch(); // Пружина внизу
 }
-void DailyPage::setWalletBalance(double amount) {
-    currentBalance = amount;
+void DailyPage::onDateSelected() {
+    // Поки що пуста функція. 
+    // В майбутньому тут буде логіка вибору дати через віджет календаря.
 }

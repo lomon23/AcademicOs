@@ -9,7 +9,7 @@
 // UI Components
 #include "components/Sidebar.h"
 #include "page/Dashboard.h"
-
+#include "page/DailyPage.h"
 // Core & Modules
 #include "../modules/Module.h" // Базовий клас модуля
 #include "../core/todo/ToDoModule.h"
@@ -50,6 +50,7 @@ private:
     // --- Modules & Pages ---
     Dashboard *dashboardPage;
     ToDoModule *todoModule; // Зберігаємо вказівник, бо він потрібен дашборду
+    DailyPage *dailyPage;
     QList<QObject*> activeModules; // Список всіх активних модулів
 };
 

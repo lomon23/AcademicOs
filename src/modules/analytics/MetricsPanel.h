@@ -7,7 +7,7 @@
 #include <QMenu>
 #include <QAction>
 #include <QColorDialog>
-
+#include "../../core/analytics/AnalyticsService.h"
 class MetricsPanel : public QWidget {
     Q_OBJECT
 public:
@@ -33,6 +33,7 @@ private:
     
     // НОВА ЗМІННА: Список вибраних метрик
     QStringList selectedMetrics; 
+    void showInlineEditor();
 };
 
 #endif // METRICSPANEL_H

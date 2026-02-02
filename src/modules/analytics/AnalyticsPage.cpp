@@ -33,6 +33,7 @@ void AnalyticsPage::setupLayout() {
     // --- 3. СТВОРЮЄМО БЛОКИ ---
     AnalyticsHeader *header = new AnalyticsHeader(this);
     MetricsPanel *metrics = new MetricsPanel(this);
+    metrics->setFixedWidth(320);
     ChartPanel *chart = new ChartPanel(this);
 
     // --- ВАЖЛИВО: ЗВ'ЯЗКИ (ВИПРАВЛЕНО ТУТ) ---
