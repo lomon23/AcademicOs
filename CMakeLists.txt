@@ -47,8 +47,10 @@ set(MODULES_SOURCES
     src/modules/finance/FinanceFullPage.h
     src/modules/finance/FinanceSmallWidget.cpp
     src/modules/finance/FinanceSmallWidget.h
-
-
+    src/modules/finance/FinanceWorkspace.cpp
+    src/modules/finance/FinanceWorkspace.h
+    src/modules/finance/FinanceSidebar.cpp
+    src/modules/finance/FinanceSidebar.h
 
 )
 set(UI_SOURCES

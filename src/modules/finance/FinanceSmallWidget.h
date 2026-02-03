@@ -3,33 +3,17 @@
 
 #include <QWidget>
 #include <QLabel>
-#include <QVBoxLayout>
-#include "FinanceModule.h"
+#include "../Module.h" // Якщо ти успадковуєшся від ModuleWidget
 
 class FinanceSmallWidget : public QWidget {
     Q_OBJECT
 public:
-    explicit FinanceSmallWidget(FinanceModule *module, QWidget *parent = nullptr);
-
-    void updateUI();
-signals:
-    void clicked(); // Сигнал натискання
-    
-
-protected:
-    // Переозначаємо клік мишкою
-    void mousePressEvent(QMouseEvent *event) override;
-
-private slots:
-    
+    explicit FinanceSmallWidget(QWidget *parent = nullptr);
+    void updateUI(); // Оновити цифри
 
 private:
-    FinanceModule *module;
     QLabel *balanceLabel;
-    QVBoxLayout *goalsLayout; // Контейнер для 3-х рядків
-
-    void setupUi();
-    QString getColorForType(AllocationType type);
+    QLabel *safeLabel;
 };
 
 #endif // FINANCESMALLWIDGET_H

@@ -6,13 +6,15 @@
 #include <QGridLayout>
 #include <QMap>
 
-// UI Components
+// --- UI Components ---
 #include "components/Sidebar.h"
 #include "page/Dashboard.h"
-#include "page/DailyPage.h"
-// Core & Modules
-#include "../modules/Module.h" // Базовий клас модуля
+#include "page/DailyPage.h" // DailyPage оголошений тут
+
+// --- Core & Modules ---
+#include "../modules/Module.h" 
 #include "../core/todo/ToDoModule.h"
+#include "../modules/finance/FinanceFullPage.h" // Додаємо FinanceFullPage
 
 class MainWindow : public QMainWindow
 {
@@ -34,7 +36,7 @@ private:
     
     // --- Logic Methods ---
     void registerPage(const QString &id, QWidget *page);
-    void createFinance(); // Динамічне створення фінансів
+    void createFinance(); 
 
     // --- State Management ---
     void saveDashboard();
@@ -47,11 +49,13 @@ private:
     QStackedWidget *pagesStack;
     QMap<QString, int> pageMap;
 
-    // --- Modules & Pages ---
-    Dashboard *dashboardPage;
-    ToDoModule *todoModule; // Зберігаємо вказівник, бо він потрібен дашборду
-    DailyPage *dailyPage;
-    QList<QObject*> activeModules; // Список всіх активних модулів
+    // --- Modules & Pages (Члени класу) ---
+    Dashboard *dashboardPage = nullptr;
+    DailyPage *dailyPage = nullptr;     // <--- ВАЖЛИВО: Оголошений тут
+    FinanceFullPage *financePage = nullptr; // <--- ВАЖЛИВО: Оголошений тут
+    
+    ToDoModule *todoModule = nullptr;
+    QList<QObject*> activeModules; 
 };
 
 #endif // MAINWINDOW_H
