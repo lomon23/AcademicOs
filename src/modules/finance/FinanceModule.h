@@ -1,64 +1,82 @@
 #ifndef FINANCEMODULE_H
 #define FINANCEMODULE_H
 
-#include "../Module.h" // Підключаємо батька
-#include <QVector>
+#include <QObject>
+#include <QList>
+#include <QDate>
+#include <QMap>
 #include <QJsonObject>
-#include <QJsonArray>
-#include "../../core/StorageManager.h"
 
-// --- Типи даних ---
-enum class AllocationType { Debt, Reserved, Goal };
+// --- СТРУКТУРИ ДАНИХ ---
 
-struct Allocation {
-    QString name;
-    double amount;
-    AllocationType type;
-    Allocation(QString n = "", double a = 0.0, AllocationType t = AllocationType::Goal) 
-        : name(n), amount(a), type(t) {}
+struct Transaction {
+    QString id;          // Унікальний ID (наприклад, timestamp)
+    QDate date;          // Дата транзакції
+    double amount;       // Сума (мінус = витрата, плюс = дохід)
+    QString category;    // "Food", "Transport"
+    QString note;        // "Кава", "Зарплата"
+    QString accountName; // З якого рахунку списано (напр. "Cash")
 };
 
-class FinanceFullPage;
-class FinanceSmallWidget;
+struct PlannedExpense {
+    QString id;
+    QDate date;
+    double amount;       // Очікувана сума
+    QString title;       // Назва ("Інтернет", "Оренда")
+    bool isPaid;         // Чи вже оплачено
+};
 
-// Спадкуємось від Module
-class FinanceModule : public Module {
+struct WalletAccount {
+    QString name;        // "Cash", "Mono", "Stash"
+    QString currency;    // "UAH", "USD"
+    double balance;      // Поточний баланс
+};
+
+// --- ГОЛОВНИЙ КЛАС МОДУЛЯ ---
+
+class FinanceModule : public QObject {
     Q_OBJECT
+
 public:
-    explicit FinanceModule(QObject *parent = nullptr);
+    static FinanceModule& instance();
 
-    // Специфічні методи фінансів
-    double getTotalBalance() const { return totalBalance; }
-    void addTransaction(const QString &category, double amount, const QString &desc);
-    void setTotalBalance(double amount);
+    // --- Основні операції ---
+    void addAccount(const QString &name, const QString &currency, double initialBalance);
+    void addTransaction(const QDate &date, double amount, const QString &category, const QString &note, const QString &accountName);
     
-    // CRUD для списку
-    QVector<Allocation>& getAllocations() { return allocations; }
-    void addAllocation(const QString &name, double amount, AllocationType type);
-    void removeAllocation(int index);
-    void updateAllocation(int index, const Allocation &alloc);
+    // --- Планування ---
+    void addPlannedExpense(const QDate &date, double amount, const QString &title);
+    void markPlannedAsPaid(const QString &id); // Перетворює план на транзакцію
 
-    // Математика
-    double getAllocatedSum() const;
-    double getFreeBalance() const;
+    // --- Гетери (Отримання даних) ---
+    QList<WalletAccount> getAccounts() const;
+    QList<Transaction> getTransactions() const;
+    QList<PlannedExpense> getPlannedExpenses() const;
+    
+    // --- Аналітика Балансу ---
+    double getTotalBalanceInUAH() const;   // Загальний баланс (конвертований)
+    double getDisposableBalance() const;   // Баланс мінус плановані витрати на цей місяць
 
-    // Фабрики віджетів
-    FinanceFullPage* createFullPage();
-    FinanceSmallWidget* createSmallWidget();
-
-    // Реалізуємо методи Module (замість saveData/loadData)
-    void save() override;
-    void load() override;
+    // --- Налаштування ---
+    void setExchangeRate(const QString &currency, double rate); // USD -> 42.0
 
 signals:
-    void dataChanged();
-    void balanceUpdated(double newBalance);
+    void dataChanged(); // Сигнал для UI: "Перемалюйся!"
 
 private:
-    // moduleTitle видалили, бо є title в батька
-    double totalBalance = 0.0; // Залишили тільки одну декларацію
-    QVector<Allocation> allocations;
-    const QString STORAGE_KEY = "finance_wallet";
+    FinanceModule();
+    ~FinanceModule();
+
+    // Збереження/Завантаження
+    void loadData();
+    void saveData();
+    QString getFilePath() const;
+
+    QList<WalletAccount> accounts;
+    QList<Transaction> transactions;
+    QList<PlannedExpense> planned;
+    
+    QMap<QString, double> exchangeRates; // Кеш курсів валют
 };
 
 #endif // FINANCEMODULE_H
