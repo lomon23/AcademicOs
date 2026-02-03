@@ -80,10 +80,15 @@ These modules are integrated into the UI but are currently under active developm
 
 ## 📸 Gallery
 
-| **Task Management** | **Dashboard & Widgets** | **Analytics Engine** | **Finance & Wallet** |
-|:---:|:---:|:---:|:---:|
-| ![ToDo](resources/assets/todo_v1_0.png) | ![Dashboard](resources/assets/dashboard_v0_4.png) | ![Analytics](resources/assets/analytics_page_v0.2.png) | ![Wallet](resources/assets/Walet_v0.2.png) |
-| *Category Tabs & Deep Nesting* | *Dark Theme & Bento Layout* | *Multi-graph Overlay & Neon UI* | *Multi-currency & Budget Planning* |
+| | |
+|:---:|:---:|
+| **Task Management** | **Dashboard & Widgets** |
+| ![ToDo](resources/assets/todo_v1_0.png) | ![Dashboard](resources/assets/dashboard_v0_4.png) |
+| *Category Tabs & Deep Nesting* | *Dark Theme & Bento Layout* |
+| | |
+| **Analytics Engine** | **Finance & Wallet** |
+| ![Analytics](resources/assets/analytics_page_v0.2.png) | ![Wallet](resources/assets/Walet_v0.2.png) |
+| *Multi-graph Overlay & Neon UI* | *Multi-currency & Budget Planning* |
 
 ---
 
