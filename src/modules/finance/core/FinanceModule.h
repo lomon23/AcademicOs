@@ -16,6 +16,7 @@ struct Transaction {
     QString category;    // "Food", "Transport"
     QString note;        // "Кава", "Зарплата"
     QString accountName; // З якого рахунку списано (напр. "Cash")
+    QString description;
 };
 
 struct PlannedExpense {

@@ -143,59 +143,94 @@ void FinanceWorkspace::onAddTransaction() {
     noteInput->clear();
 }
 void FinanceWorkspace::refreshHistory() {
-    // 1. Чистимо список
+    // 1. Очищення старого контенту
     QLayoutItem *item;
     while ((item = historyLayout->takeAt(0)) != nullptr) {
         if (item->widget()) delete item->widget();
         delete item;
     }
 
-    // 2. Отримуємо дані
     auto transactions = FinanceModule::instance().getTransactions();
 
-    // 3. Малюємо рядки
-    for (const auto &t : transactions) {
-        QFrame *row = new QFrame();
-        row->setStyleSheet("background-color: #252525; border-radius: 8px;");
-        row->setFixedHeight(50);
+    // 2. ПЕРЕВІРКА НА ПУСТОТУ (Empty State)
+    if (transactions.isEmpty()) {
+        // Створюємо контейнер, щоб відцентрувати напис
+        QWidget *emptyWidget = new QWidget();
+        QVBoxLayout *emptyLayout = new QVBoxLayout(emptyWidget);
+        emptyLayout->setAlignment(Qt::AlignCenter);
+
+        // Іконка або символ (можна емодзі для простоти)
+        QLabel *iconLabel = new QLabel("📭"); 
+        iconLabel->setStyleSheet("font-size: 48px; color: #444; background: transparent; border: none;");
+        iconLabel->setAlignment(Qt::AlignCenter);
+
+        // Текст
+        QLabel *textLabel = new QLabel("No transactions yet");
+        textLabel->setStyleSheet("font-size: 16px; color: #666; font-weight: bold; background: transparent; border: none;");
+        textLabel->setAlignment(Qt::AlignCenter);
         
+        // Підказка
+        QLabel *subLabel = new QLabel("Add your first income or expense above");
+        subLabel->setStyleSheet("font-size: 12px; color: #555; background: transparent; border: none;");
+        subLabel->setAlignment(Qt::AlignCenter);
+
+        emptyLayout->addWidget(iconLabel);
+        emptyLayout->addWidget(textLabel);
+        emptyLayout->addWidget(subLabel);
+
+        // Додаємо цей віджет у layout історії
+        historyLayout->addWidget(emptyWidget);
+        
+        // Додаємо stretch, щоб напис був зверху/по центру, а не розтягувався
+        historyLayout->addStretch();
+        return; 
+    }
+
+    // 3. ЯКЩО Є ТРАНЗАКЦІЇ (Малюємо список)
+    // Йдемо з кінця (нові зверху)
+    for (int i = transactions.size() - 1; i >= 0; --i) {
+        const auto &t = transactions[i];
+
+        QFrame *row = new QFrame();
+        row->setStyleSheet("background-color: #252525; border-radius: 8px; margin-bottom: 2px;");
+        row->setFixedHeight(50);
+
         QHBoxLayout *rowLayout = new QHBoxLayout(row);
         rowLayout->setContentsMargins(15, 0, 15, 0);
 
         // Дата
-        QLabel *dateLbl = new QLabel(t.date.toString("dd MMM"));
-        dateLbl->setStyleSheet("color: #666; font-size: 12px;");
-        dateLbl->setFixedWidth(60);
+        QLabel *dateLabel = new QLabel(t.date.toString("dd MMM"));
+        dateLabel->setStyleSheet("color: #666; font-size: 12px; border: none; background: transparent;");
+        dateLabel->setFixedWidth(60);
 
         // Категорія
-        QLabel *catLbl = new QLabel(t.category);
-        catLbl->setStyleSheet("color: #E0E0E0; font-weight: bold;");
-        catLbl->setFixedWidth(100);
+        QLabel *catLabel = new QLabel(t.category);
+        catLabel->setStyleSheet("color: #BD93F9; font-weight: bold; font-size: 13px; border: none; background: transparent;");
+        catLabel->setFixedWidth(80);
 
-        // Нотатка
-        QLabel *noteLbl = new QLabel(t.note);
-        noteLbl->setStyleSheet("color: #AAA;");
+        // Опис
+        QLabel *descLabel = new QLabel(t.description);
+        descLabel->setStyleSheet("color: #CCC; font-size: 13px; border: none; background: transparent;");
 
         // Сума
-        QString amountStr = QString::number(t.amount, 'f', 2);
-        QLabel *amountLbl = new QLabel(amountStr + " UAH");
+        QString amountStr = QString::number(t.amount, 'f', 2) + " UAH";
+        QLabel *amountLabel = new QLabel(amountStr);
+        amountLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         
-        // Колір: Червоний для витрат, Зелений для доходів
-        if (t.amount < 0) amountLbl->setStyleSheet("color: #FF5555; font-weight: bold; font-size: 14px;");
-        else amountLbl->setStyleSheet("color: #50FA7B; font-weight: bold; font-size: 14px;");
-        
-        amountLbl->setAlignment(Qt::AlignRight);
+        if (t.amount < 0) amountLabel->setStyleSheet("color: #FF5555; font-weight: bold; border: none; background: transparent;");
+        else amountLabel->setStyleSheet("color: #50FA7B; font-weight: bold; border: none; background: transparent;");
 
-        rowLayout->addWidget(dateLbl);
-        rowLayout->addWidget(catLbl);
-        rowLayout->addWidget(noteLbl);
+        rowLayout->addWidget(dateLabel);
+        rowLayout->addWidget(catLabel);
+        rowLayout->addWidget(descLabel);
         rowLayout->addStretch();
-        rowLayout->addWidget(amountLbl);
+        rowLayout->addWidget(amountLabel);
 
         historyLayout->addWidget(row);
     }
     
-    historyLayout->addStretch(); // Щоб список не розтягувався
+    // Щоб список прижимався до верху
+    historyLayout->addStretch();
 }
 void FinanceWorkspace::setupPlannedSection(QVBoxLayout *parentLayout) {
     // --- 1. HEADER (Кнопка-дропдаун) ---

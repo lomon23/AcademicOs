@@ -163,6 +163,7 @@ void FinanceModule::saveData() {
         obj["category"] = t.category;
         obj["note"] = t.note;
         obj["account"] = t.accountName;
+        obj["description"] = t.description;
         transArray.append(obj);
     }
     root["transactions"] = transArray;
@@ -216,6 +217,7 @@ void FinanceModule::loadData() {
         t.category = obj["category"].toString();
         t.note = obj["note"].toString();
         t.accountName = obj["account"].toString();
+        t.description = obj["description"].toString();
         transactions.append(t);
     }
 
