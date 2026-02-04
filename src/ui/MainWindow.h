@@ -25,6 +25,7 @@ public:
 
 private slots:
     void openDailyPage();
+    void onNavigationChanged(const QString &pageId);
 
 private:
     // --- Setup ---

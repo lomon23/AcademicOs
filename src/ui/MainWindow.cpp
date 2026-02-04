@@ -91,25 +91,9 @@ void MainWindow::setupPages() {
 }
 
 void MainWindow::setupConnections() {
-    // --- Sidebar Navigation ---
-    connect(sidebar, &Sidebar::navigationRequested, [this](const QString &id){
-        if (id == "daily") {
-            openDailyPage(); 
-        } 
-        else if (id == "todo") {
-            if (pageMap.contains("todo")) {
-                // Оновлюємо ToDo перед показом
-                ToDoPage *page = qobject_cast<ToDoPage*>(pagesStack->widget(pageMap["todo"]));
-                if (page) page->refreshData();
-                pagesStack->setCurrentIndex(pageMap["todo"]);
-            }
-        }
-        else if (pageMap.contains(id)) {
-            pagesStack->setCurrentIndex(pageMap[id]);
-        } 
-    });
-
-    // --- Dashboard -> Daily Link ---
+    // Тепер тут чисто і красиво
+    connect(sidebar, &Sidebar::navigationRequested, this, &MainWindow::onNavigationChanged);
+    
     if (dashboardPage) {
         connect(dashboardPage, &Dashboard::requestDailyPage, this, &MainWindow::openDailyPage);
     }
@@ -128,4 +112,19 @@ void MainWindow::openDailyPage() {
         dailyPage->refreshData(); // Якщо такий метод є
         pagesStack->setCurrentWidget(dailyPage);
     }
+}
+void MainWindow::onNavigationChanged(const QString &id) {
+    if (id == "daily") {
+        openDailyPage(); 
+    } 
+    else if (id == "todo") {
+        if (pageMap.contains("todo")) {
+            ToDoPage *page = qobject_cast<ToDoPage*>(pagesStack->widget(pageMap["todo"]));
+            if (page) page->refreshData();
+            pagesStack->setCurrentIndex(pageMap["todo"]);
+        }
+    }
+    else if (pageMap.contains(id)) {
+        pagesStack->setCurrentIndex(pageMap[id]);
+    } 
 }
