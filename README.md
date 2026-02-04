@@ -77,18 +77,16 @@ git clone [https://github.com/lomon23/AcademicOS.git](https://github.com/lomon23
 cd AcademicOS
 
 **2. Create a build directory
-```bash
 
 mkdir build && cd build
 
 **3. Configure and Compile
-```bash
 
 cmake ..
 make -j$(nproc)
+```
+**4. Run the application
 
-4. Run the application
-```bash
 
 ./AcademicOS
 ## 👤 Author
