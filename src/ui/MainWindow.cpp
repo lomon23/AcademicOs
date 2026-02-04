@@ -1,37 +1,28 @@
 #include "src/ui/MainWindow.h"
 #include <QDebug>
-#include <QJsonArray>
-#include <QJsonObject>
-#include <QJsonDocument>
-#include "../core/StorageManager.h"
 
-// Modules Headers
+// Core
 #include "src/modules/finance/core/FinanceModule.h"
-#include "src/modules/finance/ui/FinanceFullPage.h"
-#include "src/modules/finance/widgets/FinanceSmallWidget.h"
+#include "src/modules/todo/core/ToDoModule.h"
 
-// Pages Headers
+// Factory
+#include "src/ui/factory/PageFactory.h"
+
+// Page Headers (потрібні, щоб робити qobject_cast або викликати методи сторінок)
+#include "src/modules/dashboard/Dashboard.h"
 #include "src/modules/dashboard/DailyPage.h"
-#include "src/modules/todo/ui/ToDoPage.h"
-#include "src/modules/calendar/ui/CalendarPage.h"
-#include "src/modules/analytics/ui/AnalyticsPage.h"
+#include "src/modules/finance/ui/FinanceFullPage.h"
+#include "src/modules/todo/ui/ToDoPage.h" 
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    // 1. Налаштування вікна
     setupUI();
-
-    // 2. Створення модулів (ToDo, Calendar, Daily)
-    setupModules();
-
-    // 3. Сигнали
+    setupModules(); // 1. Створюємо логіку
+    setupPages();   // 2. Створюємо UI через Фабрику
     setupConnections();
 
-    // 4. Відновлення (поки не критично)
-    loadDashboard();
-
-    // 5. Стартова сторінка (Dashboard за замовчуванням)
+    // Стартова сторінка
     if (pageMap.contains("dashboard")) {
         pagesStack->setCurrentIndex(pageMap["dashboard"]);
     }
@@ -39,9 +30,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow() {}
 
-// ==========================================
-// 1. UI SETUP
-// ==========================================
 void MainWindow::setupUI() {
     this->resize(1280, 720);
     this->setWindowTitle("Academic OS");
@@ -53,72 +41,64 @@ void MainWindow::setupUI() {
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
     
-    mainLayout->setColumnStretch(0, 0);
-    mainLayout->setColumnStretch(1, 1);
-
+    // Сайдбар
     sidebar = new Sidebar(this);
-    mainLayout->addWidget(sidebar, 0, 0, 1, 1);
-
+    
+    // Stacked Widget (Контейнер сторінок)
     pagesStack = new QStackedWidget(centralWidget);
-    mainLayout->addWidget(pagesStack, 0, 1, 1, 1);
+
+    // Layout: Сайдбар зліва (фікс), Сторінки справа (розтягуються)
+    mainLayout->addWidget(sidebar, 0, 0);
+    mainLayout->addWidget(pagesStack, 0, 1);
+    mainLayout->setColumnStretch(1, 1);
 }
 
-// ==========================================
-// 2. MODULES SETUP (ВАЖЛИВІ ФІКСИ ТУТ)
-// ==========================================
 void MainWindow::setupModules() {
-    // --- Dashboard ---
-    dashboardPage = new Dashboard(this);
-    registerPage("dashboard", dashboardPage);
-
-    // --- Calendar ---
-    CalendarPage *calendarPage = new CalendarPage(this);
-    registerPage("calendar", calendarPage);
-
-    // --- Daily Page ---
-    // ПОМИЛКА БУЛА ТУТ: Треба використовувати змінну класу dailyPage, а не створювати нову
-    dailyPage = new DailyPage(this); 
-    registerPage("daily", dailyPage);
-
-    // --- ToDo Module ---
+    // Ініціалізація Core модулів (те, що не є UI)
     todoModule = new ToDoModule(this);
-    activeModules.append(todoModule);
-
-    ToDoPage *todoPage = new ToDoPage(this);
-    todoPage->setModule(todoModule);
-    registerPage("todo", todoPage);
-
-    // --- Analytics ---
-    AnalyticsPage *analyticsPage = new AnalyticsPage(this);
-    registerPage("analytics", analyticsPage);
-
-    // --- Wallet (Finance) ---
-    financePage = new FinanceFullPage(this); 
-    registerPage("wallet", financePage);     
     
-    // Зв'язок
-    dashboardPage->setToDoModule(todoModule);
+    // FinanceModule - це сінглтон, його не треба створювати через new, 
+    // він створиться сам при першому виклику instance()
 }
 
+void MainWindow::setupPages() {
+    // 🔥 Створюємо Фабрику і даємо їй залежності
+    PageFactory factory(todoModule);
 
-// ==========================================
-// 3. CONNECTIONS SETUP
-// ==========================================
+    // 1. Dashboard
+    QWidget* dashWidget = factory.createPage("dashboard", this);
+    dashboardPage = qobject_cast<Dashboard*>(dashWidget); // Зберігаємо вказівник
+    registerPage("dashboard", dashWidget);
+
+    // 2. Calendar
+    registerPage("calendar", factory.createPage("calendar", this));
+
+    // 3. Daily
+    QWidget* dailyWidget = factory.createPage("daily", this);
+    dailyPage = qobject_cast<DailyPage*>(dailyWidget);
+    registerPage("daily", dailyWidget);
+
+    // 4. ToDo
+    registerPage("todo", factory.createPage("todo", this));
+
+    // 5. Analytics
+    registerPage("analytics", factory.createPage("analytics", this));
+
+    // 6. Wallet
+    QWidget* walletWidget = factory.createPage("wallet", this);
+    financePage = qobject_cast<FinanceFullPage*>(walletWidget);
+    registerPage("wallet", walletWidget);
+}
+
 void MainWindow::setupConnections() {
-    
-    // --- Navigation (Sidebar) ---
+    // --- Sidebar Navigation ---
     connect(sidebar, &Sidebar::navigationRequested, [this](const QString &id){
         if (id == "daily") {
             openDailyPage(); 
         } 
-        else if (id == "wallet") {
-            // Прямий перехід на сторінку Wallet
-            if (financePage) {
-                pagesStack->setCurrentWidget(financePage);
-            }
-        }
         else if (id == "todo") {
             if (pageMap.contains("todo")) {
+                // Оновлюємо ToDo перед показом
                 ToDoPage *page = qobject_cast<ToDoPage*>(pagesStack->widget(pageMap["todo"]));
                 if (page) page->refreshData();
                 pagesStack->setCurrentIndex(pageMap["todo"]);
@@ -127,66 +107,25 @@ void MainWindow::setupConnections() {
         else if (pageMap.contains(id)) {
             pagesStack->setCurrentIndex(pageMap[id]);
         } 
-        else {
-            qDebug() << "Page not found for ID:" << id;
-        }
     });
 
-    // --- Dashboard Specifics ---
-    connect(dashboardPage, &Dashboard::requestDailyPage, this, &MainWindow::openDailyPage);
-    
-    // --- Wallet Logic Integration ---
-    // (Тут поки нічого, бо ми тимчасово відключили логіку фінансів в DailyPage)
-}
-
-// ==========================================
-// LOGIC & HELPER METHODS
-// ==========================================
-
-void MainWindow::registerPage(const QString &id, QWidget *page) {
-    int index = pagesStack->addWidget(page);
-    pageMap[id] = index;
-}
-
-void MainWindow::handleWidgetCreation(const QString &widgetName) {
-    // Цей метод можна поки спростити або прибрати, якщо ми створюємо financePage в setupModules
-    if (widgetName == "Finance Wallet" && !financePage) {
-        createFinance();
+    // --- Dashboard -> Daily Link ---
+    if (dashboardPage) {
+        connect(dashboardPage, &Dashboard::requestDailyPage, this, &MainWindow::openDailyPage);
     }
 }
 
-void MainWindow::createFinance() {
-    // Цей метод тепер дублює логіку з setupModules, 
-    // але залишимо як "fallback"
-    if (!financePage) {
-        financePage = new FinanceFullPage(this);
-        pagesStack->addWidget(financePage);
-        // Треба оновити pageMap, якщо ми створюємо динамічно
-        registerPage("wallet", financePage);
+void MainWindow::registerPage(const QString &id, QWidget *page) {
+    if (page) {
+        int index = pagesStack->addWidget(page);
+        pageMap[id] = index;
     }
 }
 
 void MainWindow::openDailyPage() {
-    // Отримуємо баланс
-    double currentBal = FinanceModule::instance().getTotalBalanceInUAH();
-    
-    // ❌ ТИМЧАСОВО КОМЕНТУЄМО, поки не оновимо DailyPage:
-    // if (dailyPage) dailyPage->setExpectedBalance(currentBal); 
-    
+    // Тут поки логіка мінімальна, бо DailyPage ще в процесі
     if (dailyPage) {
-        dailyPage->refreshData();
+        dailyPage->refreshData(); // Якщо такий метод є
         pagesStack->setCurrentWidget(dailyPage);
     }
-}
-
-// ==========================================
-// STATE MANAGEMENT
-// ==========================================
-
-void MainWindow::saveDashboard() {
-    // (Заглушка, щоб не ламалось)
-}
-
-void MainWindow::loadDashboard() {
-    // (Заглушка)
 }

@@ -8,13 +8,12 @@
 
 // --- UI Components ---
 #include "src/ui/components/sidebar/Sidebar.h"
-#include "src/modules/dashboard/Dashboard.h"
-#include "src/modules/dashboard/DailyPage.h" // DailyPage оголошений тут
 
-// --- Core & Modules ---
-#include "src/modules/Module.h" 
-#include "src/modules/todo/core/ToDoModule.h"
-#include "src/modules/finance/ui/FinanceFullPage.h" // Додаємо FinanceFullPage
+// --- Forward Declarations Only (Швидша компіляція!) ---
+class Dashboard;
+class DailyPage;
+class FinanceFullPage;
+class ToDoModule;
 
 class MainWindow : public QMainWindow
 {
@@ -25,22 +24,17 @@ public:
     ~MainWindow();
 
 private slots:
-    void handleWidgetCreation(const QString &widgetName);
     void openDailyPage();
 
 private:
-    // --- UI Methods ---
+    // --- Setup ---
     void setupUI();
-    void setupModules();
+    void setupModules();     // Тут ініціалізуємо Core (ToDoModule)
+    void setupPages();       // Тут використовуємо Factory
     void setupConnections();
     
-    // --- Logic Methods ---
+    // --- Logic ---
     void registerPage(const QString &id, QWidget *page);
-    void createFinance(); 
-
-    // --- State Management ---
-    void saveDashboard();
-    void loadDashboard();
 
     // --- Components ---
     QWidget *centralWidget;
@@ -49,13 +43,14 @@ private:
     QStackedWidget *pagesStack;
     QMap<QString, int> pageMap;
 
-    // --- Modules & Pages (Члени класу) ---
+    // --- Pointers to critical pages (для слотів) ---
+    // Ми зберігаємо вказівники, але інклудити їх хедери будемо в .cpp
     Dashboard *dashboardPage = nullptr;
-    DailyPage *dailyPage = nullptr;     // <--- ВАЖЛИВО: Оголошений тут
-    FinanceFullPage *financePage = nullptr; // <--- ВАЖЛИВО: Оголошений тут
+    DailyPage *dailyPage = nullptr;
+    FinanceFullPage *financePage = nullptr;
     
+    // --- Modules ---
     ToDoModule *todoModule = nullptr;
-    QList<QObject*> activeModules; 
 };
 
 #endif // MAINWINDOW_H
