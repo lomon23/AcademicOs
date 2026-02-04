@@ -2,113 +2,143 @@ cmake_minimum_required(VERSION 3.16)
 
 project(AcademicOS VERSION 0.1 LANGUAGES CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 1. ВАЖЛИВО: Додали 'PrintSupport' (потрібен для QCustomPlot, щоб зберігати PDF/PNG)
+# 1. Qt Packages
 find_package(Qt6 REQUIRED COMPONENTS Widgets Sql PrintSupport)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
+# 2. Includes (Важливо для нової структури)
+include_directories(
+    ${CMAKE_SOURCE_DIR}
+    libs/qcustomplot
+)
+
+# --- 3. SOURCES DEFINITIONS ---
+
 set(MAIN_SOURCES
     src/main.cpp
 )
-set(CORE_SOURCES
+
+set(GLOBAL_CORE_SOURCES
     src/core/StorageManager.cpp
     src/core/StorageManager.h
     src/core/MetricManager.cpp
     src/core/MetricManager.h
-    src/core/todo/Task.h
-    src/core/todo/ToDoModule.cpp
-    src/core/todo/ToDoModule.h
-
-    src/core/analytics/AnalyticsService.cpp
-    src/core/analytics/AnalyticsService.h
- 
-    
-)
-set(MODULES_SOURCES
     src/modules/Module.h
-    
-    src/modules/analytics/AnalyticsPage.h
-    src/modules/analytics/AnalyticsPage.cpp
-    src/modules/analytics/AnalyticsHeader.h
-    src/modules/analytics/AnalyticsHeader.cpp
-    src/modules/analytics/MetricsPanel.h
-    src/modules/analytics/MetricsPanel.cpp
-    src/modules/analytics/ChartPanel.h
-    src/modules/analytics/ChartPanel.cpp
-
-    src/modules/finance/FinanceModule.cpp
-    src/modules/finance/FinanceModule.h
-    src/modules/finance/FinanceFullPage.cpp
-    src/modules/finance/FinanceFullPage.h
-    src/modules/finance/FinanceSmallWidget.cpp
-    src/modules/finance/FinanceSmallWidget.h
-    src/modules/finance/FinanceWorkspace.cpp
-    src/modules/finance/FinanceWorkspace.h
-    src/modules/finance/FinanceSidebar.cpp
-    src/modules/finance/FinanceSidebar.h
-
 )
-set(UI_SOURCES
+
+set(GLOBAL_UI_SOURCES
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
-)
-set(PAGE_SOURCES
-    src/ui/page/Dashboard.cpp
-    src/ui/page/Dashboard.h
-    src/ui/page/DailyPage.cpp
-    src/ui/page/DailyPage.h
-
-    src/ui/page/todo/TaskItemWidget.cpp
-    src/ui/page/todo/TaskItemWidget.h
-    src/ui/page/todo/ToDoListWidget.cpp
-    src/ui/page/todo/ToDoListWidget.h
-    src/ui/page/todo/ToDoPage.cpp
-    src/ui/page/todo/ToDoPage.h
-    src/ui/page/todo/ToDoRightBar.cpp
-    src/ui/page/todo/ToDoRightBar.h
-    src/ui/page/todo/ToDoSmallWidget.cpp
-    src/ui/page/todo/ToDoSmallWidget.h
-
-    src/ui/page/calendar/CalendarPage.cpp
-    src/ui/page/calendar/CalendarPage.h
-)
-set(COMPONENT_SOURCES
-    src/ui/components/Sidebar.cpp
-    src/ui/components/Sidebar.h
-    src/ui/components/SidebarItem.cpp
-    src/ui/components/SidebarItem.h
-
-    src/ui/components/WelcomeWidget.cpp
-    src/ui/components/WelcomeWidget.h
     
+    # Factory
+    src/ui/factory/PageFactory.cpp
+    src/ui/factory/PageFactory.h
+    
+    # Components (Sidebar & Widgets)
+    src/ui/components/sidebar/Sidebar.cpp
+    src/ui/components/sidebar/Sidebar.h
+    src/ui/components/sidebar/SidebarItem.cpp
+    src/ui/components/sidebar/SidebarItem.h
+    src/ui/components/widgets/WelcomeWidget.cpp
+    src/ui/components/widgets/WelcomeWidget.h
 )
-set(STYLE_RESOURCES
-    resources/resources.qrc
-    resources/style.qss
+
+# === MODULES ===
+
+set(MODULE_TODO_SOURCES
+    # Core
+    src/modules/todo/core/ToDoModule.cpp
+    src/modules/todo/core/ToDoModule.h
+    src/modules/todo/core/Task.h
+    # UI
+    src/modules/todo/ui/ToDoPage.cpp
+    src/modules/todo/ui/ToDoPage.h
+    src/modules/todo/ui/ToDoRightBar.cpp
+    src/modules/todo/ui/ToDoRightBar.h
+    src/modules/todo/ui/ToDoListWidget.cpp
+    src/modules/todo/ui/ToDoListWidget.h
+    # Widgets
+    src/modules/todo/widgets/TaskItemWidget.cpp
+    src/modules/todo/widgets/TaskItemWidget.h
+    src/modules/todo/widgets/ToDoSmallWidget.cpp
+    src/modules/todo/widgets/ToDoSmallWidget.h
 )
+
+set(MODULE_FINANCE_SOURCES
+    # Core
+    src/modules/finance/core/FinanceModule.cpp
+    src/modules/finance/core/FinanceModule.h
+    # UI
+    src/modules/finance/ui/FinanceFullPage.cpp
+    src/modules/finance/ui/FinanceFullPage.h
+    src/modules/finance/ui/FinanceSidebar.cpp
+    src/modules/finance/ui/FinanceSidebar.h
+    src/modules/finance/ui/FinanceWorkspace.cpp
+    src/modules/finance/ui/FinanceWorkspace.h
+    # Widgets
+    src/modules/finance/widgets/FinanceSmallWidget.cpp
+    src/modules/finance/widgets/FinanceSmallWidget.h
+)
+
+set(MODULE_ANALYTICS_SOURCES
+    # Core
+    src/modules/analytics/core/AnalyticsService.cpp
+    src/modules/analytics/core/AnalyticsService.h
+    # UI
+    src/modules/analytics/ui/AnalyticsPage.cpp
+    src/modules/analytics/ui/AnalyticsPage.h
+    src/modules/analytics/ui/AnalyticsHeader.cpp
+    src/modules/analytics/ui/AnalyticsHeader.h
+    src/modules/analytics/ui/ChartPanel.cpp
+    src/modules/analytics/ui/ChartPanel.h
+    src/modules/analytics/ui/MetricsPanel.cpp
+    src/modules/analytics/ui/MetricsPanel.h
+)
+
+set(MODULE_DASHBOARD_SOURCES
+    src/modules/dashboard/Dashboard.cpp
+    src/modules/dashboard/Dashboard.h
+    src/modules/dashboard/DailyPage.cpp
+    src/modules/dashboard/DailyPage.h
+)
+
+set(MODULE_CALENDAR_SOURCES
+    src/modules/calendar/ui/CalendarPage.cpp
+    src/modules/calendar/ui/CalendarPage.h
+)
+
 set(LIB_SOURCES
     libs/qcustomplot/qcustomplot.cpp
     libs/qcustomplot/qcustomplot.h
 )
 
-add_executable(AcademicOS
-    ${MAIN_SOURCES}
-    ${UI_SOURCES}
-    ${COMPONENT_SOURCES}
-    ${LIB_SOURCES}
-    ${STYLE_RESOURCES}
-    ${PAGE_SOURCES}
-    ${CORE_SOURCES}
-    ${MODULES_SOURCES}
+set(STYLE_RESOURCES
+    resources/resources.qrc
+    resources/style.qss # Додається в QRC, але можна і тут тримати
 )
 
-target_include_directories(AcademicOS PRIVATE libs/qcustomplot)
+# 4. Executable
+add_executable(AcademicOS
+    ${MAIN_SOURCES}
+    ${GLOBAL_CORE_SOURCES}
+    ${GLOBAL_UI_SOURCES}
+    ${MODULE_TODO_SOURCES}
+    ${MODULE_FINANCE_SOURCES}
+    ${MODULE_ANALYTICS_SOURCES}
+    ${MODULE_DASHBOARD_SOURCES}
+    ${MODULE_CALENDAR_SOURCES}
+    ${LIB_SOURCES}
+    ${STYLE_RESOURCES}
+)
 
+# 5. Libraries
 target_link_libraries(AcademicOS PRIVATE 
     Qt6::Widgets 
     Qt6::Sql 

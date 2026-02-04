@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+#include "src/ui/MainWindow.h"
 #include <QDebug>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -6,15 +6,15 @@
 #include "../core/StorageManager.h"
 
 // Modules Headers
-#include "../modules/finance/FinanceModule.h"
-#include "../modules/finance/FinanceFullPage.h"
-#include "../modules/finance/FinanceSmallWidget.h"
+#include "src/modules/finance/core/FinanceModule.h"
+#include "src/modules/finance/ui/FinanceFullPage.h"
+#include "src/modules/finance/widgets/FinanceSmallWidget.h"
 
 // Pages Headers
-#include "page/DailyPage.h"
-#include "page/todo/ToDoPage.h"
-#include "page/calendar/CalendarPage.h"
-#include "../modules/analytics/AnalyticsPage.h"
+#include "src/modules/dashboard/DailyPage.h"
+#include "src/modules/todo/ui/ToDoPage.h"
+#include "src/modules/calendar/ui/CalendarPage.h"
+#include "src/modules/analytics/ui/AnalyticsPage.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

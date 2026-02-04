@@ -7,14 +7,14 @@
 #include <QMap>
 
 // --- UI Components ---
-#include "components/Sidebar.h"
-#include "page/Dashboard.h"
-#include "page/DailyPage.h" // DailyPage оголошений тут
+#include "src/ui/components/sidebar/Sidebar.h"
+#include "src/modules/dashboard/Dashboard.h"
+#include "src/modules/dashboard/DailyPage.h" // DailyPage оголошений тут
 
 // --- Core & Modules ---
-#include "../modules/Module.h" 
-#include "../core/todo/ToDoModule.h"
-#include "../modules/finance/FinanceFullPage.h" // Додаємо FinanceFullPage
+#include "src/modules/Module.h" 
+#include "src/modules/todo/core/ToDoModule.h"
+#include "src/modules/finance/ui/FinanceFullPage.h" // Додаємо FinanceFullPage
 
 class MainWindow : public QMainWindow
 {
