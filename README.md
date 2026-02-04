@@ -1,149 +1,102 @@
-# 🎓 Academic OS
+# Academic OS
 
-![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white)
-![Qt](https://img.shields.io/badge/Qt-%23217346.svg?style=for-the-badge&logo=Qt&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
-![Repo Size](https://img.shields.io/github/repo-size/lomon23/AcademicOS?style=for-the-badge&color=orange)
+![C++](https://img.shields.io/badge/C++17-%2300599C.svg?style=flat-square&logo=c%2B%2B&logoColor=white)
+![Qt](https://img.shields.io/badge/Qt_6-%23217346.svg?style=flat-square&logo=Qt&logoColor=white)
+![Linux](https://img.shields.io/badge/Platform-Linux-black?style=flat-square&logo=linux&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-gray?style=flat-square)
 
 > **Your personal operating system for productivity, learning, and life management.**
-> *Built with C++ & Qt.*
+> *Built for speed. Built with C++.*
 
-![Dashboard Screenshot](assets/dashboard_preview.png)
-
-## 🚀 About The Project
-
-**Academic OS** is not just another to-do list. It is a comprehensive desktop ecosystem designed for students who want to treat their life and studies as a managed project. 
-
-Born from the need to have a fast, native, and distraction-free tool, Academic OS combines task management, financial tracking, and personal analytics into one cohesive interface.
+![Dashboard Preview](assets/dashboard_preview.png)
 
 ---
 
-## 🗺️ Roadmap & Module Status
+## ◈ The Ecosystem
 
-### ✅ Completed & Stable
-The **ToDo Module** is currently the core focus and is fully operational.
+**Academic OS** is not merely a task list or a habit tracker. It is a comprehensive desktop ecosystem designed to treat your life and studies as a high-priority managed project.
 
-* **📝 To-Do Manager**
-    * [x] Default structure.
-    * [x] **CRUD Operations:** Create, Edit, Delete tasks instantly.
-    * [x] **Deep Nesting:** Infinite sub-tasks support.
-    * [x] **Categories:** Dynamic creation of lists with custom colors.
-    * [x] **Smart Header:** Inline editing of list titles and colors.
-    * [x] **Progress Tracking:** Visual progress bars for complex tasks.
-    * [x] **UI/UX:** "Strict Dark" modern styling & Animations.
+The system consolidates disparate tools—task management, financial tracking, personal analytics, and scheduling—into a single, cohesive interface. Data is visualized through a modular "Bento Grid" dashboard, providing an instant overview of your productivity, financial health, and habits without the clutter found in typical productivity software.
 
-* **⚙️ Core System**
-    * [x] Module Architecture.
-    * [x] JSON Data Serialization (Auto-save).
+## ◈ The Philosophy: Why C++?
 
-* 📈 Analytics Engine
+This project was born from a frustration with the modern software landscape. Most productivity tools today (Notion, Obsidian, etc.) rely on web technologies like Electron, which often results in sluggish performance, high memory usage, and "subscription fatigue."
 
-    *   [x] Multi-Graph Overlay: Visualize and compare multiple metrics on a single timeline.
+**Academic OS takes a different approach:**
+* **Native Performance:** Written in pure C++ and Qt, it offers instantaneous response times that web-based apps simply cannot match.
+* **Local First:** Your data belongs to you. No clouds, no subscriptions, no accounts.
+* **Distraction-Free:** A "Strict Dark" interface designed to keep you in the flow state, not to distract you with unnecessary animations.
 
-    *   [x] Dynamic Categories: Create isolated tabs (e.g., Sport, Health, Code) for better organization.
+## ◈ Current Constraints
 
-    *   [x] Smart Visualization: Auto-scaling axes, gradient fills, and "Neon" color palette.
-    
-    *   [x] Multi-Select Interface: Toggle multiple metrics simultaneously via the sidebar.
-
-    *   [x] Context Menu Controls: Right-click to Rename, Delete, or pick a Custom Color (RGB/HEX).
-
-    *   [x] Backend Architecture: JSON-based storage with unit support (kg, min, times).
-
-    ⚙️ Core System
-
-    *   [x] Module Architecture.
-
-    *   [x] JSON Data Serialization (Auto-save).
-### 🚧 In Progress / Planned
-These modules are integrated into the UI but are currently under active development or planned for the next sprint.
-
-* **📊 Dashboard**
-    * [x] Default structure.
-    * [ ] Widget Grid Layout.
-    * [ ] Daily Summary View.
-
-
-* **💳 Wallet 2.0**
-    * [x] Default structure.
-    * [ ] Transaction History.
-    * [ ] Budget Planning.
-
-* **📅 Productivity Tools**
-    * [x] Default structure.
-    * [ ] **Daily Check-in Page:** Morning/Evening routine logger.
-    * [ ] **Welcome Screen:** Onboarding for new users.
-    * [ ] **Settings:** Theme customization & data management.
+While Academic OS is powerful, it is designed with specific engineering trade-offs:
+* **Desktop Only:** Designed for deep work sessions on a computer, not for quick mobile checks.
+* **Linux First:** While Qt is cross-platform, the current development focus and optimization are targeted at Linux environments (Arch/Ubuntu).
+* **Compilation Required:** As a native application, it requires a build environment (CMake/Qt SDK) to run the latest version, unlike web apps that run in a browser.
 
 ---
 
 ## 📸 Gallery
 
-| | |
-|:---:|:---:|
 | **Task Management** | **Dashboard & Widgets** |
+|:---:|:---:|
 | ![ToDo](resources/assets/todo_v1_0.png) | ![Dashboard](resources/assets/dashboard_v0_4.png) |
-| *Category Tabs & Deep Nesting* | *Dark Theme & Bento Layout* |
-| | |
+| *Deep Nesting & Progress Tracking* | *Bento Grid Layout* |
+
 | **Analytics Engine** | **Finance & Wallet** |
+|:---:|:---:|
 | ![Analytics](resources/assets/analytics_page_v0.2.png) | ![Wallet](resources/assets/Walet_v0.2.png) |
-| *Multi-graph Overlay & Neon UI* | *Multi-currency & Budget Planning* |
+| *Multi-graph Overlay & Auto-scaling* | *Budget Planning & History* |
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Requirements
 
-* **Core:** C++17
-* **GUI Framework:** Qt 6 (Widgets)
-* **Build System:** CMake
-* **Data Storage:** JSON (Custom serialization)
-* **Charting:** QCustomPlot
+This project maintains a codebase that is **>99% C++**, ensuring maximum control over memory and performance.
 
-## 🏗️ Getting Started
+### Core Technologies
+* **Language:** C++17
+* **GUI Framework:** Qt 6 (Widgets module)
+* **Build System:** CMake (3.16+)
+* **Data Persistence:** Custom JSON Serialization (Auto-save)
+* **Visualization:** QCustomPlot
 
-### Prerequisites
-* C++ Compiler (GCC/Clang/MSVC)
-* Qt 6 SDK
-* CMake
-
-### Installation
-
-1.  Clone the repository:
-    ```bash
-    git clone [https://github.com/lomon23/AcademicOS.git](https://github.com/lomon23/AcademicOS.git)
-    cd AcademicOS
-    ```
-
-2.  Create build directory:
-    ```bash
-    mkdir build && cd build
-    ```
-
-3.  Build the project:
-    ```bash
-    cmake ..
-    make
-    ```
-
-4.  Run:
-    ```bash
-    ./AcademicOS
-    ```
+### Build Requirements
+To compile Academic OS from source, ensure you have the following installed:
+* C++ Compiler (GCC / Clang / MSVC)
+* Qt 6 SDK (specifically `qt6-base` and `qt6-charts` if applicable)
+* CMake & Make (or Ninja)
 
 ---
 
-## 📊 Project Stats
+## 🏗️ Installation & Build
 
-[![AcademicOS Repo Card](https://github-readme-stats.vercel.app/api/pin/?username=lomon23&repo=AcademicOS&theme=dark&show_owner=true)](https://github.com/lomon23/AcademicOS)
+**1. Clone the repository**
+```bash
+git clone [https://github.com/lomon23/AcademicOS.git](https://github.com/lomon23/AcademicOS.git)
+cd AcademicOS
 
-![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=lomon23&layout=compact&theme=dark&hide=cmake,html,python,css,typescript,javascript)
+**2. Create a build directory
+```bash
 
----
+mkdir build && cd build
 
+**3. Configure and Compile
+```bash
+
+cmake ..
+make -j$(nproc)
+
+4. Run the application
+```bash
+
+./AcademicOS
 ## 👤 Author
 
 **Lomon** - [GitHub Profile](https://github.com/lomon23)
 
----
-*Developed with ❤️ and C++*
+<br>
+
+<div align="center">
+  <i>Developed with ❤️ and C++</i>
+</div>
