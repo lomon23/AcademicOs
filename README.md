@@ -75,20 +75,20 @@ To compile Academic OS from source, ensure you have the following installed:
 ```bash
 git clone [https://github.com/lomon23/AcademicOS.git](https://github.com/lomon23/AcademicOS.git)
 cd AcademicOS
-
+```
 **2. Create a build directory
-
+```bash
 mkdir build && cd build
-
+```
 **3. Configure and Compile
-
+```bash
 cmake ..
 make -j$(nproc)
 ```
 **4. Run the application
-
-
+```bash
 ./AcademicOS
+```
 ## 👤 Author
 
 **Lomon** - [GitHub Profile](https://github.com/lomon23)
