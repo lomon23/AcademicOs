@@ -40,11 +40,11 @@ class FinanceModule : public QObject {
 
 public:
     static FinanceModule& instance();
-
+    
     // --- Основні операції ---
     void addAccount(const QString &name, const QString &currency, double initialBalance);
     void addTransaction(const QDate &date, double amount, const QString &category, const QString &note, const QString &accountName);
-    
+    void removeTransaction(int index);
     // --- Планування ---
     void addPlannedExpense(const QDate &date, double amount, const QString &title);
     void markPlannedAsPaid(const QString &id); // Перетворює план на транзакцію

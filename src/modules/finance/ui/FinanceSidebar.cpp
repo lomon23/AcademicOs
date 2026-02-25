@@ -2,6 +2,9 @@
 #include <QFrame>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QLineEdit>
+#include <QPointer>
+
 
 FinanceSidebar::FinanceSidebar(QWidget *parent) : QWidget(parent) {
     setFixedWidth(300); // Фіксована ширина "труби"
@@ -144,8 +147,10 @@ void FinanceSidebar::refreshData() {
     // 3. Перебудовуємо картки (код той самий)...
     QLayoutItem *item;
     while ((item = accountsLayout->takeAt(0)) != nullptr) {
-        if (item->widget()) delete item->widget();
-        delete item;
+        if (item->widget()) {
+            item->widget()->deleteLater(); // 🔥 ЗАМІНА: Замість delete item->widget();
+        }
+        delete item; // Сам item (обгортку лейауту) можна видаляти прямо
     }
     auto accounts = fin.getAccounts();
     for (const auto &acc : accounts) {
@@ -156,36 +161,102 @@ void FinanceSidebar::refreshData() {
 
 void FinanceSidebar::buildAccountCard(const WalletAccount &acc) {
     QFrame *card = new QFrame();
-    // (Стиль картки залишаємо як є...)
     card->setStyleSheet("QFrame { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #44475a, stop:1 #282a36); border-radius: 10px; border: 1px solid #6272a4; }");
     card->setFixedHeight(80);
 
     QVBoxLayout *layout = new QVBoxLayout(card);
     
+    // --- ВЕРХНІЙ РЯДОК (Назва + Валюта + Кнопка Олівець) ---
     QHBoxLayout *topRow = new QHBoxLayout();
     QLabel *name = new QLabel(acc.name);
     name->setStyleSheet("color: white; font-weight: bold; border: none; background: transparent;");
     
     QLabel *currency = new QLabel(acc.currency);
     currency->setStyleSheet("color: #bd93f9; font-weight: bold; border: none; background: transparent;");
+
+    // 1. Кнопка Олівець
+    QPushButton *editBtn = new QPushButton("✏️");
+    editBtn->setFixedSize(20, 20);
+    editBtn->setCursor(Qt::PointingHandCursor);
+    editBtn->setStyleSheet("QPushButton { background: transparent; border: none; font-size: 12px; }"
+                           "QPushButton:hover { background: #44475a; border-radius: 4px; }");
     
     topRow->addWidget(name);
     topRow->addStretch();
     topRow->addWidget(currency);
+    topRow->addWidget(editBtn); // Додаємо олівець у верхній правий кут
 
-    QLabel *balance = new QLabel(QString::number(acc.balance, 'f', 2));
+    // --- НИЖНІЙ РЯДОК (Баланс або Інпут) ---
+    QHBoxLayout *bottomRow = new QHBoxLayout();
     
-    // 🔥 ЛОГІКА КОЛЬОРУ 🔥
+    // 2. Лейбл для відображення балансу
+    QLabel *balanceLabel = new QLabel(QString::number(acc.balance, 'f', 2));
     if (acc.balance < 0) {
-        // Якщо мінус — червоний і жирний
-        balance->setStyleSheet("color: #FF5555; font-size: 18px; font-weight: bold; border: none; background: transparent;");
+        balanceLabel->setStyleSheet("color: #FF5555; font-size: 18px; font-weight: bold; border: none; background: transparent;");
     } else {
-        // Якщо плюс — білий (стандарт)
-        balance->setStyleSheet("color: white; font-size: 18px; border: none; background: transparent;");
+        balanceLabel->setStyleSheet("color: white; font-size: 18px; border: none; background: transparent;");
     }
 
+    // 3. Поле вводу для редагування (СХОВАНЕ)
+    QLineEdit *balanceEdit = new QLineEdit(QString::number(acc.balance, 'f', 2));
+    balanceEdit->setStyleSheet("color: white; background: #282a36; border: 1px solid #bd93f9; border-radius: 4px; font-size: 16px; padding: 2px;");
+    balanceEdit->setFixedSize(120, 26);
+    balanceEdit->hide(); // Ховаємо
+
+    bottomRow->addWidget(balanceLabel);
+    bottomRow->addWidget(balanceEdit);
+    bottomRow->addStretch(); // Щоб цифри були зліва
+
+    // --- ЛОГІКА ПЕРЕМИКАННЯ ---
+    
+    // Клік на олівець -> показуємо інпут
+    connect(editBtn, &QPushButton::clicked, this, [balanceLabel, balanceEdit]() {
+        balanceLabel->hide();
+        balanceEdit->show();
+        balanceEdit->setFocus();
+        balanceEdit->selectAll();
+    });
+
+    // Натискання Enter -> зберігаємо
+    connect(balanceEdit, &QLineEdit::returnPressed, this, [this, acc, balanceEdit, balanceLabel]() {
+        bool ok;
+        double newBalance = balanceEdit->text().toDouble(&ok);
+
+        if (ok && newBalance != acc.balance) {
+            double difference = newBalance - acc.balance;
+
+            // Створюємо коригуючу транзакцію
+            FinanceModule::instance().addTransaction(
+                QDate::currentDate(), 
+                difference, 
+                "Adjustment", 
+                "Balance Sync", 
+                acc.name
+            );
+            // Тут ми нічого більше не викликаємо, бо `addTransaction` викличе сигнал `dataChanged`, 
+            // і Sidebar сам перемалює всі картки (метод refreshData).
+        } else {
+            // Якщо нічого не змінилося або введено текст - ховаємо назад
+            balanceEdit->hide();
+            balanceLabel->show();
+        }
+    });
+
+    // Якщо юзер клікнув мишкою кудись інше (втрата фокусу) - теж ховаємо інпут
+    QPointer<QLineEdit> safeEdit(balanceEdit);
+    QPointer<QLabel> safeLabel(balanceLabel);
+
+    connect(balanceEdit, &QLineEdit::editingFinished, this, [safeEdit, safeLabel]() {
+        if (safeEdit && safeLabel) {
+            if (safeEdit->isVisible()) {
+                safeEdit->hide();
+                safeLabel->show();
+            }
+        }
+    });
+
     layout->addLayout(topRow);
-    layout->addWidget(balance);
+    layout->addLayout(bottomRow);
 
     accountsLayout->addWidget(card);
 }

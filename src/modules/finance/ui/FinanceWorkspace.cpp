@@ -216,15 +216,27 @@ void FinanceWorkspace::refreshHistory() {
         QString amountStr = QString::number(t.amount, 'f', 2) + " UAH";
         QLabel *amountLabel = new QLabel(amountStr);
         amountLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        
+
+        // 1. Створюємо кнопку видалення
+        QPushButton *deleteBtn = new QPushButton("×");
+        deleteBtn->setFixedSize(24, 24);
+        deleteBtn->setCursor(Qt::PointingHandCursor);
+        deleteBtn->setStyleSheet(
+            "QPushButton { color: #666666; background: transparent; border: none; font-size: 18px; font-weight: bold; }"
+            "QPushButton:hover { color: #FF5555; background: #333333; border-radius: 4px; }"
+        );
         if (t.amount < 0) amountLabel->setStyleSheet("color: #FF5555; font-weight: bold; border: none; background: transparent;");
         else amountLabel->setStyleSheet("color: #50FA7B; font-weight: bold; border: none; background: transparent;");
-
+        connect(deleteBtn, &QPushButton::clicked, this, [this, i]() {
+            FinanceModule::instance().removeTransaction(i);
+            refreshHistory(); 
+        });
         rowLayout->addWidget(dateLabel);
         rowLayout->addWidget(catLabel);
         rowLayout->addWidget(descLabel);
         rowLayout->addStretch();
         rowLayout->addWidget(amountLabel);
+        rowLayout->addWidget(deleteBtn);
 
         historyLayout->addWidget(row);
     }
