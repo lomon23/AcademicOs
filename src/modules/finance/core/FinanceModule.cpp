@@ -235,3 +235,33 @@ void FinanceModule::loadData() {
         planned.append(p);
     }
 }
+
+void FinanceModule::removeTransaction(int index) {
+    // 1. Захист від виходу за межі масиву
+    if (index < 0 || index >= transactions.size()) {
+        return; 
+    }
+
+    // 2. Беремо транзакцію, яку збираємось видалити
+    const auto& t = transactions[index];
+
+    // 3. Відкочуємо баланс рахунку (шукаємо потрібний рахунок)
+    for (auto& acc : accounts) {
+        if (acc.name == t.accountName) { // Або просто назва рахунку, залежно від того як ти назвав поле
+            // Віднімаємо суму транзакції від балансу.
+            // Якщо t.amount від'ємне (витрата) -> acc.balance - (-150) = acc.balance + 150
+            // Якщо t.amount додатне (дохід) -> acc.balance - (5000) = acc.balance - 5000
+            acc.balance -= t.amount; 
+            break;
+        }
+    }
+
+    // 4. Видаляємо саму транзакцію зі списку
+    transactions.removeAt(index);
+
+    // 5. Одразу зберігаємо зміни у наш JSON
+    saveData();
+
+    // 6. Стріляємо сигналом, щоб UI миттєво оновився
+    emit dataChanged();
+}
