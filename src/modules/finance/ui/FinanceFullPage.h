@@ -15,4 +15,4 @@ private:
     FinanceWorkspace *workspace;
 };
 
-#endif // FINANCEFULLPAGE_H
+#endif // FINANCEFULLPAGE_H Бебра
