@@ -98,5 +98,5 @@ make -j$(nproc)
 <br>
 
 <div align="center">
-  <i>Developed with ❤️ and C++</i>
+  <i>Developed with ❤️ and C++ and QT</i>
 </div>
